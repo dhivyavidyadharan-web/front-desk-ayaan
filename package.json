@@ -9,9 +9,18 @@
   "scripts": {
     "db:migrate": "node --env-file=.env.local scripts/db.mjs migrate",
     "db:seed": "node --env-file=.env.local scripts/db.mjs seed",
-    "db:test": "node --env-file=.env.local scripts/db.mjs test"
+    "db:test": "node --env-file=.env.local scripts/db.mjs test",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "pg": "^8.23.1"
+    "@types/node": "^24.19.1",
+    "@types/pg": "^8.23.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "pg": "^8.23.1",
+    "zod": "^4.6.5"
   }
 }
