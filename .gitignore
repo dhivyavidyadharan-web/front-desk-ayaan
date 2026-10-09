@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+coverage/
+.vercel/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+
+# Internal pricing must never enter this repo (brief §4.1).
+pricing.md
+**/pricing.md

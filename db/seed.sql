@@ -1,0 +1,40 @@
+-- Seed data for dev. Designers are FAKE until the real roster is provided.
+-- Add staff rows (email + role) for everyone who should sign in to the dashboard.
+
+insert into public.designers (id, name, email, telegram_chat_id, calcom_username, calcom_event_type_id) values
+  ('00000000-0000-0000-0000-0000000000d1', 'Test Designer A', 'designer.a@example.test', null, null, null),
+  ('00000000-0000-0000-0000-0000000000d2', 'Test Designer B', 'designer.b@example.test', null, null, null),
+  ('00000000-0000-0000-0000-0000000000d3', 'Test Designer C', 'designer.c@example.test', null, null, null);
+
+-- Business rules. confirmed = false → "unconfirmed" badge on the Settings page.
+insert into public.config (key, value, confirmed, description) values
+  ('min_lead_time_weeks_fail', '6', false,
+   'Completion needed in fewer weeks than this = fail (services.md). Conflicts with qualified.md "8–10 weeks".'),
+  ('lead_time_weeks_flag', '10', false,
+   'Between the fail threshold and this many weeks = pass, flagged as a tight timeline.'),
+  ('future_project_flag_weeks', '10', false,
+   'Site available later than this many weeks = pass, flagged as a future project (qualified.md read literally would fail it).'),
+  ('min_commercial_sqft', '500', false,
+   'Commercial projects below this size are declined. From T18 only; not in services.md or qualified.md.'),
+  ('max_commercial_sqft', '3000', true,
+   'Commercial projects up to about this size (services.md).'),
+  ('out_of_scope_project_types', '["restaurant","hotel","cafe","retail","gym"]', true,
+   'Project types that fail criterion 1 (services.md).'),
+  ('service_area_allow', '["Kothrud","Baner","Aundh","Wakad","Koregaon Park","Kalyani Nagar","Viman Nagar","Hadapsar","Magarpatta","NIBM","Kondhwa","Undri","Shivane","Warje","Erandwane","Deccan","Pimpri","Chinchwad","Pimple Saudagar","Pimple Nilakh","Ravet","Hinjewadi","Kharadi","Nanded City","Bavdhan","Pashan","Balewadi","Sus","Sinhagad Road","Shivajinagar","Camp","Wanowrie","Yerawada","Dhanori","Vishrantwadi","Akurdi","Nigdi","Thergaon","Bhosari","Sangvi"]', false,
+   'Localities treated as inside Pune city / PCMC. services.md list plus obvious Pune localities.'),
+  ('service_area_deny', '["Talegaon","Lonavala","Nashik","Mumbai","Navi Mumbai","Thane","Satara","Nagpur"]', true,
+   'Localities declined (services.md / qualified.md).'),
+  ('service_area_borderline', '["Wagholi","Moshi","Chakan","Pirangut","Hinjewadi Phase 3","Khadakwasla","Lohegaon","Manjri","Loni Kalbhor"]', false,
+   'Edge areas: agent asks one clarifying question; still unclear = unsure queue.'),
+  ('dedupe_window_minutes', '30', true,
+   'A call from the same number within this window of the previous call joins the same enquiry (T17).'),
+  ('callback_max_attempts', '2', false,
+   'Outbound callback attempts by the bot after a missed or dropped call.'),
+  ('callback_retry_minutes', '10', false,
+   'Wait between outbound callback attempts.'),
+  ('office_hours', '{"start":"10:00","end":"19:00","tz":"Asia/Kolkata"}', true,
+   'Front desk hours; used for the "outside hours" metric and complaint wording.'),
+  ('retention_days', '30', true,
+   'Transcripts, recordings and caller personal details are redacted after this many days.'),
+  ('festival_dates', '{"Diwali 2026":"2026-11-08","Diwali 2027":"2027-10-29"}', false,
+   'Named deadlines resolved to dates by code, never by the LLM.');
