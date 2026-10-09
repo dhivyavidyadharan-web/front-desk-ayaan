@@ -1,0 +1,17 @@
+{
+  "name": "aangan-call-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "db:migrate": "node --env-file=.env.local scripts/db.mjs migrate",
+    "db:seed": "node --env-file=.env.local scripts/db.mjs seed",
+    "db:test": "node --env-file=.env.local scripts/db.mjs test"
+  },
+  "devDependencies": {
+    "pg": "^8.23.1"
+  }
+}

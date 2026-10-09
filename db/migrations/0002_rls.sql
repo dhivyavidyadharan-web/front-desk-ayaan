@@ -28,7 +28,6 @@ grant usage on schema public to app_dashboard;
 grant select on all tables in schema public to app_dashboard;
 grant update on public.tasks, public.alerts, public.config to app_dashboard;
 grant update (acknowledged_at) on public.handoffs to app_dashboard;
-grant usage on all types in schema public to app_dashboard;
 
 -- ---------------------------------------------------------------------------
 -- Helpers (security definer so policies don't recurse through staff RLS)
