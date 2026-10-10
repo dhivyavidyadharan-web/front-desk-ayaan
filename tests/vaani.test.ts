@@ -79,7 +79,7 @@ describe('VaaniVoiceProvider.parseWebhook', () => {
 });
 
 describe('VaaniVoiceProvider.createWebSession', () => {
-  it('sends the agent id, script and greeting; the key only in the header', async () => {
+  it('sends the agent id and greeting, no persona override; the key only in the header', async () => {
     const fetchMock = vi.fn(async () =>
       Response.json({ token: 'lk-token', room_name: 'room-xyz', connection_url: 'wss://lk.example', live_captions_url: null }),
     );
@@ -99,8 +99,8 @@ describe('VaaniVoiceProvider.createWebSession', () => {
       medium: 'webrtc',
       primary_language: 'hi',
       welcome_message: 'Hi Rahul',
-      modify_agent: { persona: { identity: { system_prompt: 'SCRIPT' } } },
     });
+    expect(body.modify_agent).toBeUndefined(); // the saved agent is used as is
     expect(String(init.body)).not.toContain('test-key');
   });
 

@@ -79,15 +79,9 @@ export class VaaniVoiceProvider implements VoiceProvider {
         voice_gender: 'male', // matches the agent's configured voice (Devansh)
         welcome_message: req.welcomeMessage,
         welcome_interruptible: true,
-        // The agent's saved greeting wins over welcome_message, so set it here too.
-        modify_agent: {
-          persona: {
-            identity: {
-              system_prompt: req.systemPrompt,
-              greeting_message: { agent_message: req.welcomeMessage, interruptible: true },
-            },
-          },
-        },
+        // The script and greeting live in the Vaani dashboard (prompts/voice_agent.md); they read
+        // caller_name, returning_context and time_greeting from metadata. Overriding the persona per
+        // call (modify_agent) stopped the agent hearing the caller, so we don't.
       }),
     });
     if (!res.ok) throw new Error(`Vaani session failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
