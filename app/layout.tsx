@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import { Fraunces } from 'next/font/google';
 import './globals.css';
+
+const display = Fraunces({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-display' });
 
 export const metadata = {
   title: 'Aangan front desk',
@@ -8,7 +11,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={display.variable}>
       <body>{children}</body>
     </html>
   );

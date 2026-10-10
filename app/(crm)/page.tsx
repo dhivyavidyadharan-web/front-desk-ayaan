@@ -11,11 +11,11 @@ const PERIODS: { p: Period; label: string }[] = [
   { p: 'all', label: 'All time' },
 ];
 const OUTCOME_COLORS: Record<string, string> = {
-  qualified: '#1D9E75',
-  declined: '#888780',
-  unsure: '#EF9F27',
-  escalate_complaint: '#E24B4A',
-  missed: '#B4B2A9',
+  qualified: '#9dbb86', // sage
+  declined: '#8c7764', // stone
+  unsure: '#e2ad57', // ochre
+  escalate_complaint: '#d9785b', // terracotta
+  missed: '#5e4a3c', // taupe
 };
 const TYPE_LABELS: Record<string, string> = {
   residential_full: 'Full home',
@@ -140,7 +140,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
               <div key={r.reason} className="bar-row">
                 <span>{label(DECLINE_LABELS, r.reason)}</span>
                 <div className="bar-track">
-                  <div className="bar" style={{ width: `${(r.n / data.declineReasons[0]!.n) * 100}%`, background: '#888780' }} />
+                  <div className="bar" style={{ width: `${(r.n / data.declineReasons[0]!.n) * 100}%` }} />
                 </div>
                 <span>{r.n}</span>
               </div>
