@@ -74,6 +74,11 @@ export class VaaniVoiceProvider implements VoiceProvider {
         agent_id: this.config.agentId,
         medium: 'webrtc',
         metadata: req.metadata,
+        // What Vaani's own (working) dashboard test sends: the python orchestrator and no
+        // background noise. Without it the default engine stopped hearing the caller.
+        orchestrator: 'python',
+        bg_noise_enabled: false,
+        voice_speed: 1,
         // Nothing else: the script, greeting, voice and language all come from the saved agent,
         // exactly as Vaani's own test starts a call. Per-call overrides (welcome message, language,
         // persona) left the agent unable to hear the caller after the greeting.

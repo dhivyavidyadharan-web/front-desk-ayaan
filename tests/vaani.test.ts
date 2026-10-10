@@ -98,7 +98,7 @@ describe('VaaniVoiceProvider.createWebSession', () => {
       agent_id: config.agentId,
       medium: 'webrtc',
     });
-    expect(Object.keys(body).sort()).toEqual(['agent_id', 'medium', 'metadata']); // the saved agent is used as is
+    expect(Object.keys(body).sort()).toEqual(['agent_id', 'bg_noise_enabled', 'medium', 'metadata', 'orchestrator', 'voice_speed']); // the saved agent is used as is
     expect(String(init.body)).not.toContain('test-key');
   });
 
