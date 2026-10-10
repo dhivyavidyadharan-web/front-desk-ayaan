@@ -1,7 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { parseCalWebhook, verifyCalSignature } from '@/integrations/calcom';
-import { bookingMessage, callSummaryMessage, safeText, type LeadFacts } from '@/integrations/messages';
 
 const booking = (over: Record<string, unknown> = {}) => ({
   triggerEvent: 'BOOKING_CREATED',
@@ -57,37 +56,5 @@ describe('parseCalWebhook', () => {
     expect(parseCalWebhook({ ...booking(), triggerEvent: 'BOOKING_CANCELLED' }).kind).toBe('cancelled');
     expect(parseCalWebhook({ ...booking(), triggerEvent: 'MEETING_ENDED' })).toEqual({ kind: 'ignored', reason: 'MEETING_ENDED' });
     expect(parseCalWebhook({ hello: 'world' }).kind).toBe('ignored');
-  });
-});
-
-const facts: LeadFacts = {
-  name: 'Rahul <b>',
-  phone: '+919876543210',
-  area: 'Baner',
-  scope: '2BHK full home',
-  sizeSqft: 950,
-  timeline: 'Move in by February',
-  expectations: 'Warm, minimal, lots of storage',
-  handoffNote: 'Wife will attend. Asked about price (deflected).',
-  flags: ['Asked about price (deflected)'],
-  leadUrl: 'https://front-desk-ayaan.vercel.app/leads/abc',
-};
-
-describe('Telegram messages', () => {
-  it('booking message has slot, place, designer, facts and the lead link; HTML is escaped', () => {
-    const m = bookingMessage(facts, { start: new Date('2026-10-11T05:30:00Z'), locationType: 'studio', designerName: 'Ananya Kulkarni' });
-    expect(m).toContain('At the studio');
-    expect(m).toContain('Ananya Kulkarni');
-    expect(m).toContain('950 sq ft');
-    expect(m).toContain('Rahul &lt;b&gt;');
-    expect(m).toContain('https://front-desk-ayaan.vercel.app/leads/abc');
-    expect(m).toMatch(/11 Oct/);
-  });
-
-  it('never forwards a price, even if the extraction note contains one', () => {
-    expect(safeText('Budget around 8 lakh, wants teak')).toMatch(/withheld/);
-    const m = callSummaryMessage({ ...facts, handoffNote: 'They said ₹5,00,000 max' }, { outcome: 'qualified', declineReason: null, openQuestion: null, complaint: null, afterHours: true });
-    expect(m).not.toMatch(/₹|lakh/);
-    expect(m).toContain('after hours');
   });
 });

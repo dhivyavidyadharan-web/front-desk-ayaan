@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
-const ALLOWED = ['VAANI_API_KEY', 'GEMINI_API_KEY', 'TELEGRAM_BOT_TOKEN', 'HUBSPOT_ACCESS_TOKEN', 'CALCOM_API_KEY'];
+const ALLOWED = ['VAANI_API_KEY', 'GEMINI_API_KEY'];
 const key = process.argv[2];
 if (!ALLOWED.includes(key)) {
   console.error(`Usage: node scripts/set-secret.mjs <${ALLOWED.join('|')}>`);

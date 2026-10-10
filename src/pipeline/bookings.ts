@@ -4,7 +4,7 @@
 import { STAGE_LABELS, type LeadStage } from '../core/crm';
 import { withTransaction, type Db } from '../db/client';
 import type { CalEvent } from '../integrations/calcom';
-import { fmtSlot } from '../integrations/messages';
+import { fmtDateTime as fmtSlot } from '../crm/labels';
 
 export interface CalEventResult {
   bookingId: string | null;

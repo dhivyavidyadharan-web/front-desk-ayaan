@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export function Nav({ links }: { links: { href: string; label: string; count?: number }[] }) {
@@ -6,12 +7,12 @@ export function Nav({ links }: { links: { href: string; label: string; count?: n
   return (
     <nav className="nav" aria-label="Main">
       {links.map((l) => {
-        const active = l.href === '/' ? path === '/' : path.startsWith(l.href) || (l.href === '/pipeline' && path.startsWith('/leads'));
+        const active = l.href === '/' ? path === '/' : path.startsWith(l.href) || (l.href === '/pipeline' && path.startsWith('/leads')) || (l.href === '/transcripts' && path.startsWith('/transcripts'));
         return (
-          <a key={l.href} href={l.href} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
+          <Link key={l.href} href={l.href} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
             {l.label}
             {l.count ? <span className="badge warn" style={{ marginLeft: 6 }}>{l.count}</span> : null}
-          </a>
+          </Link>
         );
       })}
     </nav>

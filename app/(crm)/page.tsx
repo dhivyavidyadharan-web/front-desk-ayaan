@@ -1,8 +1,9 @@
+import Link from 'next/link';
 import { isOffice, requireSession } from '@/auth/session';
-import { getPool, withDashboardUser } from '@/db/client';
+import { dashboardRunner } from '@/db/client';
 import { dashboardSettings, overview, type Period } from '@/crm/queries';
-import { DECLINE_LABELS, fmtInr, label, OUTCOME_LABELS } from '@/crm/labels';
-import { Metric } from '../ui';
+import { DECLINE_LABELS, fmtDateTime, fmtInr, label, OUTCOME_LABELS, TASK_TYPE_LABELS } from '@/crm/labels';
+import { Metric, ScoreBadge } from '../ui';
 
 const PERIODS: { p: Period; label: string }[] = [
   { p: '7', label: '7 days' },
@@ -11,11 +12,11 @@ const PERIODS: { p: Period; label: string }[] = [
   { p: 'all', label: 'All time' },
 ];
 const OUTCOME_COLORS: Record<string, string> = {
-  qualified: '#9dbb86', // sage
-  declined: '#8c7764', // stone
-  unsure: '#e2ad57', // ochre
-  escalate_complaint: '#d9785b', // terracotta
-  missed: '#5e4a3c', // taupe
+  qualified: '#6fa47f', // sage
+  declined: '#c9b3bd', // mauve grey
+  unsure: '#f2b13c', // warm amber
+  escalate_complaint: '#c4506a', // rose red
+  missed: '#e2d3da', // pale mauve
 };
 const TYPE_LABELS: Record<string, string> = {
   residential_full: 'Full home',
@@ -25,45 +26,117 @@ const TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+function greeting(): string {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 22) return 'Good evening';
+  return 'Hello';
+}
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
 export default async function OverviewPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const session = await requireSession();
   const sp = await searchParams;
   const period: Period = (['7', '30', '90', 'all'] as const).find((p) => p === sp.period) ?? '90';
   const [data, settings] = await Promise.all([
-    withDashboardUser(getPool(), session.id, (tx) => overview(tx, period)),
+    overview(dashboardRunner(session.id), period),
     dashboardSettings(),
   ]);
   const office = isOffice(session);
   const totalOutcomes = Object.values(data.outcomes).reduce((a, b) => a + b, 0);
   const qualified = data.outcomes.qualified ?? 0;
   const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '—');
+  const dayAgo = Date.now() - 86_400_000;
+  const fresh = data.newLeads.filter((l) => new Date(l.opened_at).getTime() > dayAgo).length;
+  const summary = [
+    fresh ? `${plural(fresh, 'new lead')} since yesterday` : 'No new leads since yesterday',
+    data.upcoming.length ? `${plural(data.upcoming.length, 'consultation')} coming up` : 'no consultations booked yet',
+    data.tasks.open ? `${plural(data.tasks.open, 'thing')} waiting for you` : 'nothing waiting for you',
+  ].join(' · ');
 
   return (
     <>
       <div className="page-head">
         <div>
-          <h1>{office ? 'Overview' : 'My leads'}</h1>
-          <p className="sub">{office ? 'Every call the agent took, and what happened next.' : 'Leads assigned to you.'}</p>
+          <h1>
+            {greeting()}, {office ? 'team' : session.displayName.split(' ')[0]}
+          </h1>
+          <p className="sub">{summary}</p>
         </div>
         <nav className="segmented" aria-label="Period">
           {PERIODS.map((x) => (
-            <a key={x.p} href={`/?period=${x.p}`} className={x.p === period ? 'active' : undefined}>
+            <Link key={x.p} href={`/?period=${x.p}`} className={x.p === period ? 'active' : undefined}>
               {x.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>
 
+      <div className="grid-3 glance">
+        <section className="card">
+          <h2>Coming up</h2>
+          {data.upcoming.length === 0 ? (
+            <p className="empty">No consultations booked yet.</p>
+          ) : (
+            <ul className="glance-list">
+              {data.upcoming.map((u) => (
+                <li key={`${u.enquiry_id}-${String(u.start_at)}`}>
+                  <Link href={`/leads/${u.enquiry_id}`}>{u.name ?? u.phone}</Link>
+                  <span className="sub">
+                    {fmtDateTime(u.start_at)} · {u.location_type === 'online' ? 'Online' : u.location_type === 'studio' ? 'Studio' : 'Booked'}
+                    {office && u.designer ? ` · ${u.designer}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="card">
+          <h2>Needs you</h2>
+          {data.attention.length === 0 ? (
+            <p className="empty">All clear.</p>
+          ) : (
+            <ul className="glance-list">
+              {data.attention.map((t) => (
+                <li key={t.id}>
+                  {t.enquiry_id ? <Link href={`/leads/${t.enquiry_id}`}>{t.title ?? label(TASK_TYPE_LABELS, t.type)}</Link> : (t.title ?? label(TASK_TYPE_LABELS, t.type))}
+                  <span className="sub">
+                    {label(TASK_TYPE_LABELS, t.type)}
+                    {t.due_at && new Date(t.due_at).getTime() < Date.now() ? ' · overdue' : t.due_at ? ` · due ${fmtDateTime(t.due_at)}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {data.tasks.open > data.attention.length ? <Link href="/tasks">See all {data.tasks.open}</Link> : null}
+        </section>
+        <section className="card">
+          <h2>New leads</h2>
+          {data.newLeads.length === 0 ? (
+            <p className="empty">No new leads waiting.</p>
+          ) : (
+            <ul className="glance-list">
+              {data.newLeads.map((l) => (
+                <li key={l.id}>
+                  <span>
+                    <Link href={`/leads/${l.id}`}>{l.name ?? l.phone}</Link> <ScoreBadge score={l.score as 'hot' | 'warm' | 'cold' | null} />
+                  </span>
+                  <span className="sub">{[l.area, l.scope].filter(Boolean).join(' · ') || 'Details pending'}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
       <div className="grid">
-        <Metric k="Calls received" v={data.calls.calls} s={`${pct(data.calls.after_hours, data.calls.calls)} outside 10am–7pm`} href="/calls" />
-        <Metric k="Answered by the agent" v={pct(data.calls.answered, data.calls.calls)} s="target 100%" href="/calls?outcome=missed" />
+        <Metric k="Calls received" v={data.calls.calls} s={`${pct(data.calls.after_hours, data.calls.calls)} outside 10am–7pm`} href="/transcripts" />
+        <Metric k="Answered by the agent" v={pct(data.calls.answered, data.calls.calls)} s="target 100%" href="/transcripts?outcome=missed" />
         <Metric k="Qualified leads" v={qualified} s={`${pct(qualified, totalOutcomes)} of enquiries`} href="/pipeline" />
         <Metric k="Open tasks" v={data.tasks.open} s={data.tasks.overdue ? `${data.tasks.overdue} overdue` : 'none overdue'} href="/tasks" tone={data.tasks.overdue ? 'alert' : undefined} />
-        <Metric
-          k="Call end → designer alert"
-          v={data.handoff.toSentMin === null ? '—' : `${data.handoff.toSentMin.toFixed(1)} min`}
-          s={data.handoff.n ? (data.handoff.toAckMin === null ? 'none acknowledged yet' : `acknowledged in ${data.handoff.toAckMin.toFixed(0)} min`) : 'starts once Telegram is connected'}
-        />
+        <Metric k="Consultations booked" v={data.consultationsBooked} s="cal.com emails the designer" href="/pipeline" />
         {office ? (
           <>
             <Metric
@@ -75,7 +148,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
               k="Price-leak alerts"
               v={data.calls.price_leaks}
               s="must stay 0"
-              href="/calls?leaks=1"
+              href="/transcripts?leaks=1"
               tone={data.calls.price_leaks ? 'alert' : 'good'}
             />
           </>
@@ -98,10 +171,10 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
                 .sort((a, b) => b[1] - a[1])
                 .map(([o, n]) => (
                   <div key={o} className="bar-row" style={{ gridTemplateColumns: '1fr 40px' }}>
-                    <a href={`/calls?outcome=${o}&period=${period}`}>
+                    <Link href={`/transcripts?outcome=${o}&period=${period}`}>
                       <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: OUTCOME_COLORS[o], marginRight: 8 }} />
                       {label(OUTCOME_LABELS, o)}
-                    </a>
+                    </Link>
                     <span style={{ textAlign: 'right' }}>{n}</span>
                   </div>
                 ))}

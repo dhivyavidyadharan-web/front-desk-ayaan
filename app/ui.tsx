@@ -1,4 +1,5 @@
 // Small shared presentational pieces.
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export function Flash({ sp }: { sp: Record<string, string | undefined> }) {
@@ -28,9 +29,9 @@ export function Metric({
     </>
   );
   return href ? (
-    <a className={`metric ${tone ?? ''}`} href={href}>
+    <Link className={`metric ${tone ?? ''}`} href={href}>
       {body}
-    </a>
+    </Link>
   ) : (
     <div className={`metric ${tone ?? ''}`}>{body}</div>
   );

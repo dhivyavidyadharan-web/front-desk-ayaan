@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { LEAD_STAGES, STAGE_LABELS, type LeadStage } from '@/core/crm';
 import type { BoardCard } from '@/crm/queries';
@@ -94,9 +95,9 @@ export function Board({
                     onDragStart={() => setDragId(c.id)}
                     onDragEnd={() => setDragId(null)}
                   >
-                    <a className="name" href={`/leads/${c.id}`}>
+                    <Link className="name" href={`/leads/${c.id}`}>
                       {c.name ?? c.phone}
-                    </a>
+                    </Link>
                     <div className="meta">
                       {[c.area, c.sizeSqft ? `${c.sizeSqft.toLocaleString('en-IN')} sq ft` : null].filter(Boolean).join(' · ') || 'Area not given'}
                     </div>

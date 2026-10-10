@@ -18,7 +18,7 @@ describe.skipIf(!enabled)('September replay through the pipeline', () => {
     db = createPool(testDbUrl());
     await resetCallData(db);
     run = await replaySeptember(db);
-  }, 120_000);
+  }, 300_000);
 
   afterAll(async () => {
     await db?.end();

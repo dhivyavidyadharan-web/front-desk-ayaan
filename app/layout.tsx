@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Fraunces } from 'next/font/google';
 import './globals.css';
+import { LampLight } from './lamp-light';
 
 const display = Fraunces({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-display' });
 
@@ -12,7 +13,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={display.variable}>
-      <body>{children}</body>
+      <body>
+        <LampLight />
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { requireSession } from '@/auth/session';
 import { getPool, withDashboardUser } from '@/db/client';
 import { tasksList, type TaskView } from '@/crm/queries';
@@ -27,9 +28,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         </div>
         <nav className="segmented" aria-label="View">
           {VIEWS.map((x) => (
-            <a key={x.v} href={`/tasks?view=${x.v}`} className={x.v === view ? 'active' : undefined}>
+            <Link key={x.v} href={`/tasks?view=${x.v}`} className={x.v === view ? 'active' : undefined}>
               {x.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>
@@ -61,7 +62,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                     {t.question ? <div className="sub">{t.question}</div> : null}
                     {view === 'done' && t.status === 'cancelled' ? <div className="sub">Cancelled automatically (caller rang back)</div> : null}
                   </td>
-                  <td>{t.enquiry_id ? <a href={`/leads/${t.enquiry_id}`}>{t.name ?? t.phone}</a> : '—'}</td>
+                  <td>{t.enquiry_id ? <Link href={`/leads/${t.enquiry_id}`}>{t.name ?? t.phone}</Link> : '—'}</td>
                   <td>
                     {fmtDateTime(view === 'done' ? t.resolved_at : t.due_at)}
                     {overdue ? <div><span className="badge bad">overdue</span></div> : null}

@@ -2,7 +2,6 @@ import { getVoiceProvider } from '@/channels/voice';
 import { WebhookAuthError } from '@/channels/voice/VoiceProvider';
 import { getPool } from '@/db/client';
 import { extractorFromEnv } from '@/llm';
-import { notifierFromEnv } from '@/integrations/notifier';
 import { getCallerContext, handleCallEnded, type PipelineDeps } from '@/pipeline/processCall';
 
 export const runtime = 'nodejs';
@@ -24,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
   if (event.type === 'ignored') return Response.json({ ok: true, ignored: event.reason });
 
   const db = getPool();
-  const deps: PipelineDeps = { db, extractor: extractorFromEnv(), notifier: notifierFromEnv(db) };
+  const deps: PipelineDeps = { db, extractor: extractorFromEnv() };
 
   // Browser calls carry no caller ID: find who started the session.
   const providerCallId = event.type === 'call_started' ? event.providerCallId : event.interaction.providerCallId;

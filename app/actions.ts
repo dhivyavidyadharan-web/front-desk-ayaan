@@ -121,37 +121,6 @@ export async function addNote(formData: FormData) {
   back(path, error ? { error } : { msg: 'Note added.' });
 }
 
-export async function addReminder(formData: FormData) {
-  const session = await requireSession();
-  const enquiryId = uuid.safeParse(formData.get('enquiryId'));
-  if (!enquiryId.success) back('/pipeline', { error: 'Unknown lead.' });
-  const path = `/leads/${enquiryId.data}`;
-  const title = String(formData.get('title') ?? '').trim();
-  const due = String(formData.get('due') ?? '');
-  const assignee = uuid.safeParse(formData.get('assignee'));
-  if (!title) back(path, { error: 'Say what needs doing.' });
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(due)) back(path, { error: 'Pick a due date and time.' });
-  if (!assignee.success) back(path, { error: 'Pick who it is for.' });
-  const dueAt = new Date(`${due}:00+05:30`); // the form's local time is studio time
-
-  const error = await asUser(session, async (tx) => {
-    const who = await tx.query<{ display_name: string | null; email: string }>(
-      `select display_name, email from public.staff where id = $1 and active`,
-      [assignee.data],
-    );
-    const name = who.rows[0]?.display_name ?? who.rows[0]?.email;
-    if (!name) return 'You can only set reminders for yourself.';
-    await tx.query(
-      `insert into public.tasks (type, enquiry_id, title, due_at, assigned_to) values ('follow_up', $1, $2, $3, $4)`,
-      [enquiryId.data, title, dueAt, assignee.data],
-    );
-    await logActivity(tx, session, enquiryId.data, 'task', `Reminder for ${name}: ${title} (due ${due.replace('T', ' ')}).`);
-    return null;
-  }).catch(() => 'You can only set reminders for yourself on your own leads.');
-  revalidatePath('/tasks');
-  back(path, error ? { error } : { msg: 'Reminder added.' });
-}
-
 export async function completeTask(formData: FormData) {
   const session = await requireSession();
   const taskId = uuid.safeParse(formData.get('taskId'));

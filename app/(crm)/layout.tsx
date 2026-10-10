@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { Suspense, type ReactNode } from 'react';
 import { isOffice, requireSession } from '@/auth/session';
 import { getPool, withDashboardUser } from '@/db/client';
 import { openTaskCount } from '@/crm/queries';
@@ -7,7 +8,26 @@ import { ViewAs } from './view-as';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CrmLayout({ children }: { children: ReactNode }) {
+// The frame renders at once; the top bar's data streams in, and loading.tsx (the design-fact
+// screen) covers the page while it loads.
+export default function CrmLayout({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <Suspense
+        fallback={
+          <header className="topbar">
+            <Link className="brand" href="/">Aangan front desk</Link>
+          </header>
+        }
+      >
+        <TopBar />
+      </Suspense>
+      <main>{children}</main>
+    </>
+  );
+}
+
+async function TopBar() {
   const session = await requireSession();
   const db = getPool();
   const [tasks, staff] = await Promise.all([
@@ -19,20 +39,17 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   const links = [
     { href: '/', label: 'Overview' },
     { href: '/pipeline', label: 'Pipeline' },
-    { href: '/calls', label: 'Calls' },
+    { href: '/transcripts', label: 'Transcripts' },
     { href: '/tasks', label: 'Tasks', count: tasks },
     ...(isOffice(session) ? [{ href: '/settings', label: 'Settings' }] : []),
   ];
   return (
-    <>
-      <header className="topbar">
-        <a className="brand" href="/">Aangan front desk</a>
-        <Nav links={links} />
-        <div className="who">
-          <ViewAs current={session.id} staff={staff.rows} />
-        </div>
-      </header>
-      <main>{children}</main>
-    </>
+    <header className="topbar">
+      <Link className="brand" href="/">Aangan front desk</Link>
+      <Nav links={links} />
+      <div className="who">
+        <ViewAs current={session.id} staff={staff.rows} />
+      </div>
+    </header>
   );
 }

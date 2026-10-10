@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { isOffice, requireSession } from '@/auth/session';
 import { getPool, withDashboardUser } from '@/db/client';
 import { board, dashboardSettings, designers } from '@/crm/queries';
@@ -54,9 +55,9 @@ export default async function PipelinePage({
           </div>
           <button type="submit">Apply</button>
           {designerId || score ? (
-            <a className="btn" href="/pipeline">
+            <Link className="btn" href="/pipeline">
               Clear
-            </a>
+            </Link>
           ) : null}
         </form>
       </div>

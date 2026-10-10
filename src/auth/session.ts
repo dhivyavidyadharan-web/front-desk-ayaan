@@ -2,6 +2,7 @@
 // founder (admin), and the "Viewing as" menu switches to front desk or a designer. The choice
 // is kept in a cookie, and every query still runs through the database's RLS for that person.
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { z } from 'zod';
 import { getPool } from '../db/client';
 
@@ -24,7 +25,8 @@ const toSession = (r: Row): StaffSession => ({
   displayName: r.display_name ?? r.email,
 });
 
-export async function getSession(): Promise<StaffSession | null> {
+// cache(): the layout and the page share one lookup per request.
+export const getSession = cache(async (): Promise<StaffSession | null> => {
   const db = getPool();
   const chosen = z.guid().safeParse((await cookies()).get(VIEW_AS_COOKIE)?.value);
   if (chosen.success) {
@@ -40,7 +42,7 @@ export async function getSession(): Promise<StaffSession | null> {
       where active order by (role = 'admin') desc, created_at limit 1`,
   );
   return rows[0] ? toSession(rows[0]) : null;
-}
+});
 
 export async function requireSession(): Promise<StaffSession> {
   const session = await getSession();

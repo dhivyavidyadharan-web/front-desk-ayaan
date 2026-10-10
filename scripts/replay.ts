@@ -5,7 +5,9 @@ import { MockVoiceProvider } from '@/channels/voice/providers/mock';
 import { createPool, type Db } from '@/db/client';
 import { FixtureExtractor } from '@/llm/extractor';
 import { handleCallEnded, type ProcessResult } from '@/pipeline/processCall';
-import { SEPTEMBER_EXPECTED, SEPTEMBER_EXTRACTIONS, loadSeptemberEvents } from '../fixtures/september';
+import { parseCalWebhook } from '@/integrations/calcom';
+import { recordCalEvent } from '@/pipeline/bookings';
+import { SEPTEMBER_EXPECTED, SEPTEMBER_EXTRACTIONS, loadSeptemberEvents, phoneFor } from '../fixtures/september';
 
 export async function resetCallData(db: Db): Promise<void> {
   await db.query(
@@ -30,6 +32,37 @@ export async function replaySeptember(db: Db) {
   return { results };
 }
 
+/** Demo only: two upcoming consultations booked through the real cal.com path (fictional designers). */
+export async function addDemoBookings(db: Db) {
+  const at = (days: number, hourIst: number) => {
+    const d = new Date(Date.now() + days * 86_400_000);
+    d.setUTCHours(hourIst - 6, 30, 0, 0); // IST = UTC+5:30, so 11:00 IST = 05:30 UTC
+    return d.toISOString();
+  };
+  const demo = [
+    { uid: 'demo-T01', phone: phoneFor('T01'), start: at(1, 11), location: 'integrations:daily', organizer: 'ananya@aangan.example' },
+    { uid: 'demo-T05', phone: phoneFor('T05'), start: at(3, 16), location: 'Aangan Studio, Pune', organizer: 'rohan@aangan.example' },
+  ];
+  for (const b of demo) {
+    await recordCalEvent(
+      db,
+      parseCalWebhook({
+        triggerEvent: 'BOOKING_CREATED',
+        payload: {
+          uid: b.uid,
+          startTime: b.start,
+          endTime: new Date(new Date(b.start).getTime() + 45 * 60_000).toISOString(),
+          location: b.location,
+          attendees: [{ name: 'Demo client', email: `${b.uid}@example.com` }],
+          organizer: { email: b.organizer },
+          metadata: b.location.startsWith('integrations:') ? { videoCallUrl: `https://app.cal.com/video/${b.uid}` } : {},
+          responses: { attendeePhoneNumber: { value: b.phone } },
+        },
+      }),
+    );
+  }
+}
+
 export function testDbUrl(): string {
   const url = process.env.DATABASE_URL_TEST;
   if (!url) throw new Error('DATABASE_URL_TEST is not set (.env.local)');
@@ -42,6 +75,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try {
     await resetCallData(db);
     const { results } = await replaySeptember(db);
+    await addDemoBookings(db);
     let ok = 0;
     for (const { id, expected, result } of results) {
       const match = result.outcome === expected;

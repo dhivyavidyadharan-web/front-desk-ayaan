@@ -1,6 +1,5 @@
 import { getPool } from '@/db/client';
 import { parseCalWebhook, verifyCalSignature } from '@/integrations/calcom';
-import { notifierFromEnv } from '@/integrations/notifier';
 import { recordCalEvent } from '@/pipeline/bookings';
 
 export const runtime = 'nodejs';
@@ -22,12 +21,7 @@ export async function POST(req: Request) {
   const event = parseCalWebhook(json);
   if (event.kind === 'ignored') return Response.json({ ok: true, ignored: event.reason });
 
-  const db = getPool();
-  const result = await recordCalEvent(db, event);
-  const notifier = notifierFromEnv(db);
-  if (notifier && result.bookingId) {
-    if (result.linked) await notifier.bookingLinked(result.bookingId);
-    if (result.cancelled) await notifier.bookingCancelled(result.bookingId);
-  }
+  // cal.com itself emails the designer (the booking's host); here we only update the lead.
+  const result = await recordCalEvent(getPool(), event);
   return Response.json({ ok: true, ...result });
 }
