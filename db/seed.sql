@@ -1,10 +1,4 @@
--- Seed data for dev. Designers are FAKE until the real roster is provided.
--- Add staff rows (email + role) for everyone who should sign in to the dashboard.
-
-insert into public.designers (id, name, email, telegram_chat_id, calcom_username, calcom_event_type_id) values
-  ('00000000-0000-0000-0000-0000000000d1', 'Test Designer A', 'designer.a@example.test', null, null, null),
-  ('00000000-0000-0000-0000-0000000000d2', 'Test Designer B', 'designer.b@example.test', null, null, null),
-  ('00000000-0000-0000-0000-0000000000d3', 'Test Designer C', 'designer.c@example.test', null, null, null);
+-- Business rules. The fictional roster (designers and staff) is in db/seed_demo.sql.
 
 -- Business rules. confirmed = false → "unconfirmed" badge on the Settings page.
 insert into public.config (key, value, confirmed, description) values

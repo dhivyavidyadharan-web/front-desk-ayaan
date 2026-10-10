@@ -271,3 +271,6 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; 
 .pendant.speaking .bulb { box-shadow: 0 0 26px 10px rgba(255, 196, 120, 0.75); }
 .pendant.speaking .pool { opacity: 1; }
 button:disabled { opacity: 0.6; cursor: progress; }
+.view-as { display: flex; align-items: center; gap: 8px; }
+.view-as label { margin: 0; font-size: 12px; color: var(--muted); }
+.view-as select { border-radius: 999px; padding: 5px 12px; font-size: 13px; }

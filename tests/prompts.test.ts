@@ -36,6 +36,7 @@ describe('prompts', () => {
     expect(voice).toMatch(/online\*\* \(video call\) or \*\*at our studio/);
     expect(voice).toMatch(/Only offer times the tool shows as free/);
     expect(voice).toMatch(/Never name the designer/);
+    expect(voice).toContain("You'll get the address in the email.");
   });
 
   it('voice agent quotes no design or execution durations', () => {
@@ -45,7 +46,6 @@ describe('prompts', () => {
   it('voice agent prompt has the template slots the session fills', () => {
     expect(voice).toContain('{{caller_name}}');
     expect(voice).toContain('{{returning_context}}');
-    expect(voice).toContain('{{studio_address}}');
   });
 });
 

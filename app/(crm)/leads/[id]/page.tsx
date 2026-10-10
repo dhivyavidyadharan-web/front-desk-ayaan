@@ -39,7 +39,7 @@ export default async function LeadPage({
     return { ...l, team: office ? await designers(tx) : [], staff: await staffMembers(tx) };
   });
   if (!data) notFound();
-  const { head, calls, activities, tasks, latest } = data;
+  const { head, calls, activities, tasks, latest, bookings } = data;
   const flags = [...new Set(calls.flatMap((c) => c.flags))];
   const lastCall = calls[0];
 
@@ -61,7 +61,7 @@ export default async function LeadPage({
             <p className="sub">Transcript deleted after the retention period.</p>
           ) : c.transcript && c.transcript.length ? (
             <details>
-              <summary>Transcript ({c.transcript.length} turns)</summary>
+              <summary className="btn">View full transcript ({c.transcript.length} turns)</summary>
               <div className="transcript">
                 {c.transcript.map((t, i) => (
                   <p key={i}>
@@ -207,6 +207,29 @@ export default async function LeadPage({
         </div>
 
         <aside className="stack-gap">
+          {bookings.length ? (
+            <section className="card">
+              <h2>Consultation</h2>
+              <ul className="timeline">
+                {bookings.map((b) => (
+                  <li key={b.id}>
+                    <strong>{fmtDateTime(b.start_at)}</strong>{' '}
+                    <span className={`badge ${b.status === 'cancelled' ? 'bad' : 'ok'}`}>{b.status === 'cancelled' ? 'Cancelled' : 'Booked'}</span>
+                    <div className="sub">
+                      {b.location_type === 'online' ? 'Online (video)' : b.location_type === 'studio' ? 'At the studio' : 'Location in booking'}
+                      {b.designer ? ` · ${b.designer}` : ''}
+                    </div>
+                    {b.meeting_url && b.status !== 'cancelled' ? (
+                      <a href={b.meeting_url} target="_blank" rel="noreferrer">
+                        Video link
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           {head.stage ? (
             <section className="card">
               <h2>Stage</h2>

@@ -2,7 +2,7 @@
 //   migrate : apply db/migrations/*.sql in order, once each (tracked in schema_migrations)
 //   seed    : run db/seed.sql (only when the config table is empty)
 //   test    : run db/tests/*.sql (each test file rolls itself back)
-//   seed-dev-staff : add fake staff for local dashboard testing (test branch only)
+//   seed-demo : fictional designers and staff (safe to re-run; main, or test with --test)
 import { readdirSync, readFileSync } from 'node:fs';
 import pg from 'pg';
 
@@ -55,13 +55,12 @@ async function test() {
   console.log('all database tests passed');
 }
 
-async function seedDevStaff() {
-  if (target !== 'DATABASE_URL_TEST') throw new Error('seed-dev-staff only runs against the test branch (--test)');
-  await client.query(readFileSync('db/seed_dev_staff.sql', 'utf8'));
-  console.log('dev staff seeded');
+async function seedDemo() {
+  await client.query(readFileSync('db/seed_demo.sql', 'utf8'));
+  console.log('demo roster seeded');
 }
 
-const tasks = { migrate, seed, test, 'seed-dev-staff': seedDevStaff };
+const tasks = { migrate, seed, test, 'seed-demo': seedDemo };
 const task = tasks[process.argv[2]];
 if (!task) {
   console.error(`usage: node scripts/db.mjs <${Object.keys(tasks).join('|')}>`);

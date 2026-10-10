@@ -1,7 +1,7 @@
-// Who is using the dashboard. Google sign-in plugs in here once its OAuth client exists.
-// Until then, a staff picker works on this machine only (never in production).
+// Who the dashboard is showing. There is no login (a demo project): the dashboard opens as the
+// founder (admin), and the "Viewing as" menu switches to front desk or a designer. The choice
+// is kept in a cookie, and every query still runs through the database's RLS for that person.
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getPool } from '../db/client';
 
@@ -13,27 +13,38 @@ export interface StaffSession {
   displayName: string;
 }
 
-export const DEV_LOGIN_ENABLED = process.env.NODE_ENV !== 'production';
-export const DEV_COOKIE = 'dev_staff';
+export const VIEW_AS_COOKIE = 'view_as';
+
+type Row = { id: string; email: string; role: StaffSession['role']; designer_id: string | null; display_name: string | null };
+const toSession = (r: Row): StaffSession => ({
+  id: r.id,
+  email: r.email,
+  role: r.role,
+  designerId: r.designer_id,
+  displayName: r.display_name ?? r.email,
+});
 
 export async function getSession(): Promise<StaffSession | null> {
-  if (!DEV_LOGIN_ENABLED) return null;
-  const parsed = z.guid().safeParse((await cookies()).get(DEV_COOKIE)?.value);
-  if (!parsed.success) return null;
-  const { rows } = await getPool().query<{
-    id: string;
-    email: string;
-    role: StaffSession['role'];
-    designer_id: string | null;
-    display_name: string | null;
-  }>('select id, email, role, designer_id, display_name from public.staff where id = $1 and active', [parsed.data]);
-  const r = rows[0];
-  return r ? { id: r.id, email: r.email, role: r.role, designerId: r.designer_id, displayName: r.display_name ?? r.email } : null;
+  const db = getPool();
+  const chosen = z.guid().safeParse((await cookies()).get(VIEW_AS_COOKIE)?.value);
+  if (chosen.success) {
+    const { rows } = await db.query<Row>(
+      'select id, email, role, designer_id, display_name from public.staff where id = $1 and active',
+      [chosen.data],
+    );
+    if (rows[0]) return toSession(rows[0]);
+  }
+  // Default: the founder's view.
+  const { rows } = await db.query<Row>(
+    `select id, email, role, designer_id, display_name from public.staff
+      where active order by (role = 'admin') desc, created_at limit 1`,
+  );
+  return rows[0] ? toSession(rows[0]) : null;
 }
 
 export async function requireSession(): Promise<StaffSession> {
   const session = await getSession();
-  if (!session) redirect('/login');
+  if (!session) throw new Error('No staff in the database yet: run `npm run db:seed-demo`.');
   return session;
 }
 

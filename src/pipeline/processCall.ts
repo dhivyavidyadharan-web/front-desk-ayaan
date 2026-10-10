@@ -14,7 +14,9 @@ import { decideOutcome, type Decision, type Outcome } from '../core/decideOutcom
 import { shouldJoinPreviousEnquiry } from '../core/enquiry';
 import { scanTranscriptForPriceLeaks } from '../core/priceLeak';
 import { withTransaction, type Db, type Tx } from '../db/client';
+import type { Notifier } from '../integrations/notifier';
 import type { Extractor } from '../llm/extractor';
+import { linkPendingForCaller } from './bookings';
 
 export interface CostRates {
   voicePerMinuteInr: number;
@@ -25,6 +27,8 @@ export interface CostRates {
 export interface PipelineDeps {
   db: Db;
   extractor: Extractor;
+  /** Telegram alerts; omitted when Telegram isn't configured (and in tests). */
+  notifier?: Notifier;
   now?: () => Date;
   costRates?: CostRates;
 }
@@ -347,8 +351,23 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
       ],
     );
 
-    return { callId, enquiryId, callbackReminder };
+    return { callId, enquiryId, callerId, callbackReminder };
   });
+
+  // After commit: link any booking the agent made during this call, then send alerts.
+  // Failures here never lose the call; they surface as dashboard alerts.
+  try {
+    const linked = await linkPendingForCaller(deps.db, stored.callerId);
+    if (deps.notifier) {
+      await deps.notifier.callProcessed(stored.callId);
+      for (const bookingId of linked) await deps.notifier.bookingLinked(bookingId);
+    }
+  } catch (err) {
+    await deps.db.query(`insert into public.alerts (type, call_id, details) values ('integration_failed', $1, $2)`, [
+      stored.callId,
+      JSON.stringify({ step: 'after-call', error: (err as Error).message }),
+    ]);
+  }
 
   return {
     callId: stored.callId,

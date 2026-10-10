@@ -271,8 +271,17 @@ export async function lead(tx: Tx, id: string) {
     )
   ).rows;
 
+  const bookings = (
+    await tx.query<{ id: string; start_at: Date; location_type: string | null; meeting_url: string | null; status: string; designer: string | null }>(
+      `select b.id, b.start_at, b.location_type, b.meeting_url, b.status, d.name as designer
+         from public.bookings b left join public.designers d on d.id = b.designer_id
+        where b.enquiry_id = $1 order by b.start_at desc`,
+      [id],
+    )
+  ).rows;
+
   const latest = calls.find((c) => c.extraction)?.extraction ?? null;
-  return { head, calls, activities, tasks, latest };
+  return { head, calls, activities, tasks, latest, bookings };
 }
 
 // ---------------------------------------------------------------------------

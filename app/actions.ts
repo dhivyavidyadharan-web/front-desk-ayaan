@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { DEV_COOKIE, DEV_LOGIN_ENABLED, requireSession, type StaffSession } from '@/auth/session';
+import { VIEW_AS_COOKIE, requireSession, type StaffSession } from '@/auth/session';
 import { LEAD_STAGES, STAGE_LABELS, type LeadStage } from '@/core/crm';
 import { getPool, withDashboardUser, type Tx } from '@/db/client';
 
@@ -30,20 +30,15 @@ async function logActivity(tx: Tx, s: StaffSession, enquiryId: string, kind: str
 }
 
 // ---------------------------------------------------------------------------
-// Sign-in (local only until Google sign-in is configured)
+// "Viewing as" (no login: demo project)
 // ---------------------------------------------------------------------------
 
-export async function devSignIn(formData: FormData) {
-  if (!DEV_LOGIN_ENABLED) back('/login', { error: 'Local sign-in is disabled in production.' });
+export async function viewAs(formData: FormData) {
   const id = uuid.safeParse(formData.get('staffId'));
-  if (!id.success) back('/login', { error: 'Pick a staff member.' });
-  (await cookies()).set(DEV_COOKIE, id.data, { httpOnly: true, sameSite: 'lax', path: '/' });
-  redirect('/');
-}
-
-export async function signOut() {
-  (await cookies()).delete(DEV_COOKIE);
-  redirect('/login');
+  const returnTo = String(formData.get('returnTo') ?? '/');
+  const safeReturn = returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.startsWith('/leads/') ? returnTo : '/';
+  if (id.success) (await cookies()).set(VIEW_AS_COOKIE, id.data, { httpOnly: true, sameSite: 'lax', path: '/' });
+  redirect(safeReturn);
 }
 
 // ---------------------------------------------------------------------------

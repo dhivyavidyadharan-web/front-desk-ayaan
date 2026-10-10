@@ -62,12 +62,15 @@ describe.skipIf(!enabled)('September replay through the pipeline', () => {
     expect(Object.fromEntries(rows.map((r) => [r.stage, r.n]))).toEqual({ qualified: 11, lost: 5, new: 3, none: 1 });
   });
 
-  it('qualified leads are spread round-robin across the 3 designers', async () => {
+  it('qualified leads are spread evenly round-robin across the active designers', async () => {
+    const designers = (await db.query(`select count(*)::int as n from designers where active`)).rows[0].n;
     const rows = (
-      await db.query(`select assigned_designer_id, count(*)::int as n from enquiries where stage = 'qualified' group by 1 order by 2`)
+      await db.query(`select assigned_designer_id, count(*)::int as n from enquiries where stage = 'qualified' group by 1`)
     ).rows;
-    expect(rows.map((r) => r.n)).toEqual([3, 4, 4]);
+    const counts = rows.map((r) => r.n);
     expect(rows.every((r) => r.assigned_designer_id)).toBe(true);
+    expect(rows.length).toBe(Math.min(designers, 11));
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
   });
 
   it('qualified leads get a score with reasons', async () => {
