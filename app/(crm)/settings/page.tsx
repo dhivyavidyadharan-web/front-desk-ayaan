@@ -37,6 +37,47 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
       <Flash sp={sp} />
 
+      <section className="card" style={{ marginBottom: 16 }}>
+        <h2>Designer alerts on Telegram</h2>
+        {!tg ? (
+          <p className="sub">Add the bot token to turn on Telegram alerts: node scripts/set-secret.mjs TELEGRAM_BOT_TOKEN</p>
+        ) : !bot ? (
+          <p className="sub">The bot token didn’t work. Check it with @BotFather and save it again.</p>
+        ) : (
+          <>
+            <p className="sub" style={{ marginBottom: 12 }}>
+              Send each designer their link. They tap it and press Start in{' '}
+              <a href={`https://t.me/${bot}`} target="_blank" rel="noreferrer">
+                @{bot}
+              </a>
+              ; from then on they get every qualified lead and booked consultation assigned to them, with the project snapshot.
+            </p>
+            <table className="list">
+              <tbody>
+                {designers.map((d) => {
+                  const link = `https://t.me/${bot}?start=${designerLinkCode(d.id, tg.webhookSecret)}`;
+                  return (
+                    <tr key={d.id}>
+                      <td style={{ width: '30%' }}>
+                        <strong>{d.name}</strong>{' '}
+                        {d.telegram_chat_id ? <span className="badge ok">Connected</span> : <span className="badge warn">Not connected</span>}
+                      </td>
+                      <td>
+                        <div className="form-row" style={{ marginBottom: 0 }}>
+                          <code style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 420, whiteSpace: 'nowrap' }}>{link}</code>
+                          <CopyButton text={link} label={d.telegram_chat_id ? 'Copy link again' : 'Copy link'} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+      </section>
+
+      <h2>Rules</h2>
       <table className="list">
         <thead>
           <tr>
