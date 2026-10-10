@@ -3,17 +3,16 @@ import { useEffect, useState } from 'react';
 import { DESIGN_FACTS } from '@/crm/designFacts';
 
 /** A pendant lamp and a rotating design fact, shown while a page loads. */
-export function LoadingFact() {
-  const [i, setI] = useState<number | null>(null);
+export function LoadingFact({ initial }: { initial: number }) {
+  // The server picks the first fact, so it shows before the page's script loads.
+  const [i, setI] = useState(initial);
 
   useEffect(() => {
-    // Pick on the client so server and browser render the same placeholder first.
-    setI(Math.floor(Math.random() * DESIGN_FACTS.length));
-    const t = setInterval(() => setI((n) => ((n ?? 0) + 1) % DESIGN_FACTS.length), 4500);
+    const t = setInterval(() => setI((n) => (n + 1) % DESIGN_FACTS.length), 4500);
     return () => clearInterval(t);
   }, []);
 
-  const fact = i === null ? null : DESIGN_FACTS[i];
+  const fact = DESIGN_FACTS[i % DESIGN_FACTS.length];
   return (
     <div className="loading" role="status" aria-live="polite">
       <div className="pendant" aria-hidden="true">
