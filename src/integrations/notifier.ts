@@ -20,15 +20,26 @@ export function appBaseUrl(env = process.env): string {
 
 export function notifierFromEnv(db: Db): Notifier | undefined {
   const cfg = telegramConfigFromEnv();
-  return cfg ? new TelegramNotifier(db, new TelegramClient(cfg.botToken), { teamChatId: cfg.teamChatId, baseUrl: appBaseUrl() }) : undefined;
+  return cfg ? new TelegramNotifier(db, new TelegramClient(cfg.botToken), { baseUrl: appBaseUrl() }) : undefined;
+}
+
+/** The connected team group (set via "/team <code>"), else TELEGRAM_TEAM_CHAT_ID, else none. */
+export async function teamChatId(db: Db): Promise<string | null> {
+  const r = await db.query<{ value: unknown }>(`select value from public.config where key = 'telegram_team_chat_id'`);
+  const v = r.rows[0]?.value;
+  return typeof v === 'string' || typeof v === 'number' ? String(v) : (process.env.TELEGRAM_TEAM_CHAT_ID ?? null);
 }
 
 export class TelegramNotifier implements Notifier {
   constructor(
     private readonly db: Db,
     private readonly api: TelegramApi,
-    private readonly cfg: { teamChatId: string; baseUrl: string },
+    private readonly cfg: { baseUrl: string; teamChatId?: string },
   ) {}
+
+  private async team(): Promise<string | null> {
+    return this.cfg.teamChatId ?? (await teamChatId(this.db));
+  }
 
   private async facts(enquiryId: string): Promise<LeadFacts> {
     const r = (
@@ -101,7 +112,8 @@ export class TelegramNotifier implements Notifier {
       complaint: c.complaint,
       afterHours: Boolean(c.outside_hours),
     });
-    await this.once({ callId }, 'call_summary', this.cfg.teamChatId, { type: 'team' }, () => this.api.send(this.cfg.teamChatId, text));
+    const team = await this.team();
+    if (team) await this.once({ callId }, 'call_summary', team, { type: 'team' }, () => this.api.send(team, text));
   }
 
   private async booking(bookingId: string) {
@@ -118,7 +130,8 @@ export class TelegramNotifier implements Notifier {
     const b = await this.booking(bookingId);
     if (!b) return;
     const text = bookingMessage(await this.facts(b.enquiry_id), { start: b.start_at, locationType: b.location_type, designerName: b.designer_name });
-    await this.once({ bookingId }, 'booking', this.cfg.teamChatId, { type: 'team' }, () => this.api.send(this.cfg.teamChatId, text));
+    const team = await this.team();
+    if (team) await this.once({ bookingId }, 'booking', team, { type: 'team' }, () => this.api.send(team, text));
     if (b.designer_id && b.designer_chat) {
       await this.once({ bookingId }, 'booking', b.designer_chat, { type: 'designer', designerId: b.designer_id }, (handoffId) =>
         this.api.send(b.designer_chat!, text, [{ text: '✓ Acknowledge', data: `ack:${handoffId}` }]),
@@ -130,7 +143,8 @@ export class TelegramNotifier implements Notifier {
     const b = await this.booking(bookingId);
     if (!b) return;
     const text = cancelledMessage(await this.facts(b.enquiry_id), b.start_at);
-    await this.once({ bookingId }, 'booking_cancelled', this.cfg.teamChatId, { type: 'team' }, () => this.api.send(this.cfg.teamChatId, text));
+    const team = await this.team();
+    if (team) await this.once({ bookingId }, 'booking_cancelled', team, { type: 'team' }, () => this.api.send(team, text));
     if (b.designer_id && b.designer_chat) {
       await this.once({ bookingId }, 'booking_cancelled', b.designer_chat, { type: 'designer', designerId: b.designer_id }, () =>
         this.api.send(b.designer_chat!, text),

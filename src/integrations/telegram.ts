@@ -3,13 +3,13 @@ const API = 'https://api.telegram.org';
 
 export interface TelegramConfig {
   botToken: string;
-  teamChatId: string;
+  /** Sent back by Telegram on every webhook call; also the key for signing connect links. */
   webhookSecret: string;
 }
 
 export function telegramConfigFromEnv(env = process.env): TelegramConfig | null {
-  const { TELEGRAM_BOT_TOKEN: botToken, TELEGRAM_TEAM_CHAT_ID: teamChatId, TELEGRAM_WEBHOOK_SECRET: webhookSecret } = env;
-  return botToken && teamChatId && webhookSecret ? { botToken, teamChatId, webhookSecret } : null;
+  const { TELEGRAM_BOT_TOKEN: botToken, TELEGRAM_WEBHOOK_SECRET: webhookSecret } = env;
+  return botToken && webhookSecret ? { botToken, webhookSecret } : null;
 }
 
 export interface TelegramApi {
@@ -25,7 +25,7 @@ export class TelegramClient implements TelegramApi {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  private async call<T>(method: string, body: unknown): Promise<T> {
+  async call<T>(method: string, body: unknown = {}): Promise<T> {
     const res = await this.fetchImpl(`${API}/bot${this.token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,4 +54,16 @@ export class TelegramClient implements TelegramApi {
   async clearButtons(chatId: string, messageId: string) {
     await this.call('editMessageReplyMarkup', { chat_id: chatId, message_id: Number(messageId), reply_markup: { inline_keyboard: [] } });
   }
+}
+
+let botUsername: string | null = null;
+/** The bot's @username, for t.me links. Cached per server instance. */
+export async function getBotUsername(cfg: TelegramConfig): Promise<string | null> {
+  if (botUsername) return botUsername;
+  try {
+    botUsername = (await new TelegramClient(cfg.botToken).call<{ username: string }>('getMe')).username;
+  } catch {
+    return null;
+  }
+  return botUsername;
 }
