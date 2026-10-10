@@ -136,7 +136,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         <Metric k="Answered by the agent" v={pct(data.calls.answered, data.calls.calls)} s="target 100%" href="/transcripts?outcome=missed" />
         <Metric k="Qualified leads" v={qualified} s={`${pct(qualified, totalOutcomes)} of enquiries`} href="/pipeline" />
         <Metric k="Open tasks" v={data.tasks.open} s={data.tasks.overdue ? `${data.tasks.overdue} overdue` : 'none overdue'} href="/tasks" tone={data.tasks.overdue ? 'alert' : undefined} />
-        <Metric k="Consultations booked" v={data.consultationsBooked} s="cal.com emails the designer" href="/pipeline" />
+        <Metric k="Consultations booked" v={data.consultationsBooked} s="designer alerted on Telegram" href="/pipeline" />
         {office ? (
           <>
             <Metric
