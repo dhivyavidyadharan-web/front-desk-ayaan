@@ -104,8 +104,8 @@ export class TelegramNotifier implements Notifier {
 
   private async booking(bookingId: string) {
     return (
-      await this.db.query<{ enquiry_id: string; start_at: Date; location_type: 'online' | 'studio' | null; designer_id: string | null; chat: string | null }>(
-        `select b.enquiry_id, b.start_at, b.location_type, b.designer_id, d.telegram_chat_id as chat
+      await this.db.query<{ enquiry_id: string; start_at: Date; location_type: 'online' | 'studio' | null; meeting_url: string | null; designer_id: string | null; chat: string | null }>(
+        `select b.enquiry_id, b.start_at, b.location_type, b.meeting_url, b.designer_id, d.telegram_chat_id as chat
            from public.bookings b left join public.designers d on d.id = b.designer_id where b.id = $1 and b.enquiry_id is not null`,
         [bookingId],
       )
@@ -115,7 +115,7 @@ export class TelegramNotifier implements Notifier {
   async bookingLinked(bookingId: string) {
     const b = await this.booking(bookingId);
     if (!b?.designer_id || !b.chat) return;
-    const text = bookingMessage(await this.snapshot(b.enquiry_id), { start: b.start_at, locationType: b.location_type });
+    const text = bookingMessage(await this.snapshot(b.enquiry_id), { start: b.start_at, locationType: b.location_type, meetingUrl: b.meeting_url });
     await this.once({ bookingId }, 'booking', { id: b.designer_id, chatId: b.chat }, (handoffId) =>
       this.api.send(b.chat!, text, [{ text: '✓ Acknowledge', data: `ack:${handoffId}` }]),
     );

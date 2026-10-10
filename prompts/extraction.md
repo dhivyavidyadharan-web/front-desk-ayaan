@@ -65,3 +65,4 @@ Never fail anyone for: not knowing what they want, calling outside office hours,
 - `referral_source`: how they heard about the studio, if they said (a person's name, Instagram, Google…).
 - `handoff_note`: at most 120 words for the designer: who, where, what, size, timeline, what they hope for, and anything uncertain (especially an unclear budget or decision-maker). **No prices or budget figures.**
 - `complaint`: fill only for `existing_client_issue`; otherwise all three fields are `null`.
+- `consultation`: `agreed` is `true` only if the caller said yes to a consultation and gave a day and time. `mode`: `online` (video call) or `studio` (in person). `preferred_time`: the day and time in their words. `start_at`: that slot as an ISO 8601 date-time with the `+05:30` offset, worked out from the call date ("Saturday at 11" → the next Saturday, 11:00). `null` if no clear day and time. If they changed it during the call, use the final one.

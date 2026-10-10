@@ -2,6 +2,7 @@
 // arrives before the call's transcript is processed. Unmatched bookings wait (enquiry_id null)
 // and are linked when the call lands, matched on the caller's phone or email.
 import { STAGE_LABELS, type LeadStage } from '../core/crm';
+import type { Extraction } from '../core/extraction';
 import { withTransaction, type Db } from '../db/client';
 import type { CalEvent } from '../integrations/calcom';
 import { fmtDateTime as fmtSlot } from '../crm/labels';
@@ -94,6 +95,29 @@ export async function linkBooking(db: Db, bookingId: string): Promise<boolean> {
     }
     return true;
   });
+}
+
+/**
+ * Our own booking (no cal.com): the caller agreed a day and time on the call, Gemini resolved it
+ * to `start_at`, and we put it on the lead's designer's calendar. Online consultations get a
+ * Jitsi room (free, no account). Idempotent per call. Linked by linkPendingForCaller below.
+ */
+export async function bookFromCall(db: Db, callId: string, callerId: string, c: NonNullable<Extraction['consultation']>, name: string | null, email: string | null) {
+  if (!c.agreed || !c.start_at) return null;
+  const start = new Date(c.start_at);
+  if (Number.isNaN(start.getTime()) || start.getTime() < Date.now()) return null;
+  const uid = `ayaan-${callId}`;
+  const online = c.mode !== 'studio';
+  const meetingUrl = online ? `https://meet.jit.si/aangan-${callId.slice(0, 8)}` : null;
+  const r = await db.query<{ id: string }>(
+    `insert into public.bookings (calcom_booking_uid, start_at, end_at, meeting_url, attendee_email, attendee_name, attendee_phone,
+       location_type, location, status)
+     select $1, $2, $2::timestamptz + interval '1 hour', $3, $4, $5, c.phone, $6, $7, 'confirmed' from public.callers c where c.id = $8
+     on conflict (calcom_booking_uid) do nothing
+     returning id`,
+    [uid, start, meetingUrl, email, name, online ? 'online' : 'studio', online ? meetingUrl : 'Aangan Studio, Pune', callerId],
+  );
+  return r.rows[0]?.id ?? null;
 }
 
 /** After a call is stored: link any booking the agent made during it. */

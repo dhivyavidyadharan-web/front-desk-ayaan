@@ -53,9 +53,11 @@ export function qualifiedMessage(s: LeadSnapshot) {
   return `✨ <b>New qualified lead for you</b>\n${snapshot(s)}${links(s)}`;
 }
 
-export function bookingMessage(s: LeadSnapshot, b: { start: Date; locationType: 'online' | 'studio' | null }) {
-  const where = b.locationType === 'online' ? 'Online (video link in your cal.com email)' : b.locationType === 'studio' ? 'At the studio' : 'See booking';
-  return `📅 <b>Consultation booked with you</b>\n${line('When', fmtSlot(b.start))}${line('Where', where)}${snapshot(s)}${links(s)}`;
+export function bookingMessage(s: LeadSnapshot, b: { start: Date; locationType: 'online' | 'studio' | null; meetingUrl?: string | null }) {
+  const where = b.locationType === 'online' ? 'Online (video call)' : b.locationType === 'studio' ? 'At the studio' : 'See booking';
+  const video = b.meetingUrl ? `${line('Video link', b.meetingUrl)}` : '';
+  const ask = '\nPlease confirm the time with the client and send them the details.\n';
+  return `📅 <b>Consultation booked with you</b>\n${line('When', fmtSlot(b.start))}${line('Where', where)}${video}${ask}${snapshot(s)}${links(s)}`;
 }
 
 export function cancelledMessage(s: Pick<LeadSnapshot, 'name' | 'phone' | 'leadUrl'>, start: Date) {

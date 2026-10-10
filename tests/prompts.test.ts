@@ -34,7 +34,8 @@ describe('prompts', () => {
 
   it('voice agent offers online or studio consultations and only checked times', () => {
     expect(voice).toMatch(/online\*\* \(video call\) or \*\*at our studio/);
-    expect(voice).toMatch(/Only offer times the tool shows as free/);
+    expect(voice).toMatch(/Monday to Saturday, 10am to 7pm/);
+    expect(voice).toMatch(/Your designer will confirm it with you/);
     expect(voice).toMatch(/Never name the designer/);
     expect(voice).toContain("You'll get the address in the email.");
   });

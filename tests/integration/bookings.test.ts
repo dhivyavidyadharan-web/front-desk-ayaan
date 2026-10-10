@@ -12,6 +12,7 @@ import { extraction } from '../../fixtures/extractionBuilder';
 const enabled = Boolean(process.env.DATABASE_URL_TEST);
 const PHONE_A = '+919822200001'; // books during the call (webhook first)
 const PHONE_B = '+919822200002'; // booking arrives after the call
+const PHONE_C = '+919822200003'; // Ayaan books it himself (no cal.com)
 
 const calEvent = (uid: string, phone: string, trigger = 'BOOKING_CREATED') =>
   parseCalWebhook({
@@ -49,8 +50,8 @@ describe.skipIf(!enabled)('cal.com bookings', () => {
 
   beforeAll(async () => {
     db = createPool(process.env.DATABASE_URL_TEST!);
-    await db.query(`delete from public.bookings where attendee_phone in ($1, $2)`, [PHONE_A, PHONE_B]);
-    await db.query(`delete from public.callers where phone in ($1, $2)`, [PHONE_A, PHONE_B]);
+    await db.query(`delete from public.bookings where attendee_phone in ($1, $2, $3)`, [PHONE_A, PHONE_B, PHONE_C]);
+    await db.query(`delete from public.callers where phone in ($1, $2, $3)`, [PHONE_A, PHONE_B, PHONE_C]);
   });
 
   afterAll(async () => {
@@ -100,5 +101,29 @@ describe.skipIf(!enabled)('cal.com bookings', () => {
     const sig = createHmac('sha256', 'itest-cal').update(body).digest('hex');
     const ok = await POST(new Request('https://x.test', { method: 'POST', body, headers: { 'x-cal-signature-256': sig } }));
     expect(await ok.json()).toEqual({ ok: true, ignored: 'not a booking payload' });
+  });
+
+  it('a slot agreed on the call is booked on the designer\'s calendar with a video link', async () => {
+    const id = `itest-own-${Date.now()}`;
+    const e = MockVoiceProvider.parseEvent({
+      type: 'call_ended', providerCallId: id, from: PHONE_C,
+      startedAt: '2026-10-10T21:40:00+05:30', answeredAt: '2026-10-10T21:40:00+05:30', endedAt: '2026-10-10T21:45:00+05:30',
+      durationSeconds: 300, turns: [{ speaker: 'caller', text: 'Saturday 11am online works.' }],
+    });
+    if (e.type !== 'call_ended') throw new Error('unexpected');
+    const ex = extraction({
+      caller: { name: 'Own Booking', phone: PHONE_C, email: 'own@example.com' },
+      project: { area_locality: 'Baner', size_sqft: 950 },
+      consultation: { agreed: true, mode: 'online', preferred_time: 'Saturday 11am', start_at: '2030-10-12T11:00:00+05:30' },
+    });
+    const r = await handleCallEnded({ db, extractor: new FixtureExtractor({ [id]: ex }) }, e.interaction);
+    expect(r.outcome).toBe('qualified');
+    const b = (await db.query(
+      `select b.start_at, b.location_type, b.meeting_url, b.designer_id is not null as has_designer, e.stage
+         from bookings b join enquiries e on e.id = b.enquiry_id where b.attendee_phone = $1`, [PHONE_C])).rows;
+    expect(b).toHaveLength(1);
+    expect(b[0]).toMatchObject({ location_type: 'online', has_designer: true, stage: 'consultation_booked' });
+    expect(b[0].meeting_url).toMatch(/^https:\/\/meet\.jit\.si\/aangan-/);
+    expect(new Date(b[0].start_at).toISOString()).toBe('2030-10-12T05:30:00.000Z');
   });
 });

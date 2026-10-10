@@ -16,7 +16,7 @@ import { scanTranscriptForPriceLeaks } from '../core/priceLeak';
 import { withTransaction, type Db, type Tx } from '../db/client';
 import type { Notifier } from '../integrations/notifier';
 import type { Extractor } from '../llm/extractor';
-import { linkPendingForCaller } from './bookings';
+import { bookFromCall, linkPendingForCaller } from './bookings';
 
 export interface CostRates {
   voicePerMinuteInr: number;
@@ -358,6 +358,9 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
   // one "consultation booked" message if it was booked, otherwise "new qualified lead".
   // A failure here never loses the call; it surfaces as a dashboard alert.
   try {
+    if (decision?.outcome === 'qualified' && extraction?.consultation) {
+      await bookFromCall(deps.db, stored.callId, stored.callerId, extraction.consultation, extraction.caller.name, extraction.caller.email);
+    }
     const linked = await linkPendingForCaller(deps.db, stored.callerId);
     if (deps.notifier) {
       if (linked.length) for (const bookingId of linked) await deps.notifier.bookingLinked(bookingId);

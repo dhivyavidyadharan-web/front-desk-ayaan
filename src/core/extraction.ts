@@ -82,6 +82,17 @@ export const ExtractionSchema = z
         summary: nullableString,
       })
       .strict(),
+    /** A consultation the caller agreed to on the call. Booked by our code on the designer's calendar. */
+    consultation: z
+      .object({
+        agreed: z.boolean(),
+        mode: z.enum(['online', 'studio']).nullable(),
+        preferred_time: nullableString,
+        /** The agreed slot as ISO 8601 with the +05:30 offset, resolved from the call date. */
+        start_at: z.iso.datetime({ offset: true }).nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

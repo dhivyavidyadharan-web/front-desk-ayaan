@@ -2,7 +2,7 @@
 // Starts a browser call with the Vaani agent. Public: no login, so input is validated and
 // sessions are rate-limited per number and overall to cap cost.
 import { VaaniVoiceProvider, vaaniConfigFromEnv } from '@/channels/voice/providers/vaani';
-import { openingLine } from '@/core/greeting';
+import { openingLine, timeGreeting } from '@/core/greeting';
 import { normalizePhone } from '@/core/phone';
 import { getPool } from '@/db/client';
 import { FixtureExtractor } from '@/llm/extractor';
@@ -54,7 +54,7 @@ export async function startWebCall(input: { name: string; phone: string; languag
       systemPrompt,
       welcomeMessage: openingLine(language, name, Boolean(ctx.resuming)),
       language,
-      metadata: { caller_name: name, caller_phone: phone, returning_context: returningContext },
+      metadata: { caller_name: name, caller_phone: phone, returning_context: returningContext, time_greeting: timeGreeting(new Date()) },
     });
     await db.query(
       `insert into public.voice_sessions (provider, provider_call_id, phone, name, language, consent_at, agent_prompt_version)
