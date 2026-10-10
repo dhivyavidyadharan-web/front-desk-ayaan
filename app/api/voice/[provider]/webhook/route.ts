@@ -23,7 +23,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
     db: getPool(),
     // Gemini replaces this in the next step; until then calls without a fixture go to needs_review.
     extractor: new FixtureExtractor({}),
-    voice,
   };
 
   if (event.type === 'call_started') {

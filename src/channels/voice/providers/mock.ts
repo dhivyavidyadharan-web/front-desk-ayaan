@@ -1,7 +1,7 @@
 // Stand-in voice provider until Vani access arrives. Accepts our own JSON events (used by
-// scripts/replay.ts and tests) and pretends to place outbound calls.
+// scripts/replay.ts and tests).
 import { z } from 'zod';
-import type { OutboundCallRequest, VoiceEvent, VoiceProvider } from '../VoiceProvider';
+import type { VoiceEvent, VoiceProvider } from '../VoiceProvider';
 import { WebhookAuthError } from '../VoiceProvider';
 
 const turnSchema = z.object({ speaker: z.enum(['agent', 'caller']), text: z.string(), at: z.string().optional() });
@@ -31,7 +31,6 @@ export type MockEvent = z.input<typeof eventSchema>;
 
 export class MockVoiceProvider implements VoiceProvider {
   readonly name = 'mock';
-  readonly outboundCalls: OutboundCallRequest[] = [];
 
   constructor(private readonly secret: string | undefined = process.env.MOCK_WEBHOOK_SECRET) {}
 
@@ -64,10 +63,5 @@ export class MockVoiceProvider implements VoiceProvider {
 
   static parseEvent(input: MockEvent): VoiceEvent {
     return MockVoiceProvider.toVoiceEvent(eventSchema.parse(input));
-  }
-
-  async startOutboundCall(req: OutboundCallRequest): Promise<{ providerCallId: string }> {
-    this.outboundCalls.push(req);
-    return { providerCallId: `mock-out-${crypto.randomUUID()}` };
   }
 }

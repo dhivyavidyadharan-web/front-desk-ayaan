@@ -9,13 +9,15 @@ import { SEPTEMBER_EXPECTED, SEPTEMBER_EXTRACTIONS, loadSeptemberEvents } from '
 
 export async function resetCallData(db: Db): Promise<void> {
   await db.query(
-    `truncate public.alerts, public.costs, public.actions, public.tasks, public.handoffs, public.bookings,
+    `truncate public.activities, public.alerts, public.costs, public.actions, public.tasks, public.handoffs, public.bookings,
               public.extractions, public.calls, public.enquiries, public.callers`,
   );
+  // Replays use historical timestamps, so round-robin must start fresh.
+  await db.query('update public.designers set last_assigned_at = null');
 }
 
-export async function replaySeptember(db: Db, voice = new MockVoiceProvider('unused')) {
-  const deps = { db, extractor: new FixtureExtractor(SEPTEMBER_EXTRACTIONS), voice, costRates: { voicePerMinuteInr: 6, llmInputPerMTokInr: 0, llmOutputPerMTokInr: 0 } };
+export async function replaySeptember(db: Db) {
+  const deps = { db, extractor: new FixtureExtractor(SEPTEMBER_EXTRACTIONS), costRates: { voicePerMinuteInr: 6, llmInputPerMTokInr: 0, llmOutputPerMTokInr: 0 } };
   const results: { id: string; expected: string; result: ProcessResult }[] = [];
   for (const raw of loadSeptemberEvents()) {
     const event = MockVoiceProvider.parseEvent(raw);
@@ -25,7 +27,7 @@ export async function replaySeptember(db: Db, voice = new MockVoiceProvider('unu
     const result = await handleCallEnded({ ...deps, now: () => at }, event.interaction);
     results.push({ id: event.interaction.providerCallId, expected: SEPTEMBER_EXPECTED[event.interaction.providerCallId] ?? '?', result });
   }
-  return { results, voice };
+  return { results };
 }
 
 export function testDbUrl(): string {
@@ -39,12 +41,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const db = createPool(testDbUrl());
   try {
     await resetCallData(db);
-    const { results, voice } = await replaySeptember(db);
+    const { results } = await replaySeptember(db);
     let ok = 0;
     for (const { id, expected, result } of results) {
       const match = result.outcome === expected;
       if (match) ok++;
-      const extras = [...result.flags, result.priceLeak ? 'PRICE LEAK' : '', result.callbackPlaced ? 'callback placed' : '']
+      const extras = [...result.flags, result.priceLeak ? 'PRICE LEAK' : '', result.callbackReminder ? 'call-back reminder' : '']
         .filter(Boolean)
         .join(', ');
       console.log(`${match ? '✓' : '✗'} ${id.replace('sep-', '').padEnd(5)} ${String(result.outcome).padEnd(19)} ${extras}`);
@@ -53,11 +55,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       `select (select count(*) from calls)::int as calls, (select count(*) from enquiries)::int as enquiries,
               (select count(*) from tasks where status in ('open','in_progress'))::int as open_tasks,
               (select count(*) from tasks where status = 'cancelled')::int as cancelled_tasks,
-              (select count(*) from alerts where type = 'price_leak')::int as price_leaks`,
+              (select count(*) from alerts where type = 'price_leak')::int as price_leaks,
+              (select count(*) from enquiries where assigned_designer_id is not null)::int as assigned_leads`,
     );
     console.log(`\n${ok}/${results.length} outcomes as expected`);
     console.log('database:', counts.rows[0]);
-    console.log('bot callbacks placed:', voice.outboundCalls.length);
+    const stages = await db.query(`select coalesce(stage::text, 'complaint') as stage, count(*)::int as n from enquiries group by 1 order by 1`);
+    console.log('pipeline:', Object.fromEntries(stages.rows.map((r) => [r.stage, r.n])));
   } finally {
     await db.end();
   }

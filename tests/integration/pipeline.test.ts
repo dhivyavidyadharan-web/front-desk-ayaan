@@ -2,6 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPool, type Db } from '@/db/client';
 import { getCallerContext } from '@/pipeline/processCall';
+import { runDailyJobs } from '@/jobs/daily';
 import { FixtureExtractor } from '@/llm/extractor';
 import { MockVoiceProvider } from '@/channels/voice/providers/mock';
 import { replaySeptember, resetCallData, testDbUrl } from '../../scripts/replay';
@@ -41,19 +42,52 @@ describe.skipIf(!enabled)('September replay through the pipeline', () => {
     expect(t17).toEqual({ calls: 2, outcome: 'qualified' });
   });
 
-  it('T17: bot callback was placed after the drop, then cancelled when the caller rang back', async () => {
-    expect(run.voice.outboundCalls.map((c) => c.to)).toContain(phoneFor('T17'));
+  it('T17: call-back reminder after the drop is cancelled when the caller rang back', async () => {
+    expect(run.results.find((r) => r.id === 'sep-T17a')?.result.callbackReminder).toBe(true);
     const task = await one<{ status: string }>(
       `select t.status from tasks t join calls c on c.id = t.call_id where c.provider_call_id = 'sep-T17a'`,
     );
     expect(task.status).toBe('cancelled');
   });
 
-  it('T08: missed call leaves an open callback task', async () => {
-    const task = await one<{ status: string; attempts: number }>(
-      `select t.status, t.attempts from tasks t join calls c on c.id = t.call_id where c.provider_call_id = 'sep-T08'`,
+  it('T08: missed call leaves an open call-back reminder on the dashboard', async () => {
+    const task = await one<{ status: string; title: string }>(
+      `select t.status, t.title from tasks t join calls c on c.id = t.call_id where c.provider_call_id = 'sep-T08'`,
     );
-    expect(task).toEqual({ status: 'in_progress', attempts: 1 });
+    expect(task).toEqual({ status: 'open', title: `Call back ${phoneFor('T08')} (missed call)` });
+  });
+
+  it('pipeline stages follow the outcomes; complaints stay off the board', async () => {
+    const rows = (await db.query(`select coalesce(stage::text, 'none') as stage, count(*)::int as n from enquiries group by 1`)).rows;
+    expect(Object.fromEntries(rows.map((r) => [r.stage, r.n]))).toEqual({ qualified: 11, lost: 5, new: 3, none: 1 });
+  });
+
+  it('qualified leads are spread round-robin across the 3 designers', async () => {
+    const rows = (
+      await db.query(`select assigned_designer_id, count(*)::int as n from enquiries where stage = 'qualified' group by 1 order by 2`)
+    ).rows;
+    expect(rows.map((r) => r.n)).toEqual([3, 4, 4]);
+    expect(rows.every((r) => r.assigned_designer_id)).toBe(true);
+  });
+
+  it('qualified leads get a score with reasons', async () => {
+    const t01 = await one<{ score: string; score_reasons: string[] }>(
+      `select e.score, e.score_reasons from enquiries e join callers p on p.id = e.caller_id where p.phone = $1`,
+      [phoneFor('T01')],
+    );
+    expect(t01.score).toBe('hot');
+    expect(t01.score_reasons).toContain('Referred: Friend: Shruti Joshi (Aundh client)');
+  });
+
+  it('every step is on the lead timeline', async () => {
+    const rows = (
+      await db.query(
+        `select a.kind from activities a join enquiries e on e.id = a.enquiry_id join callers p on p.id = e.caller_id
+          where p.phone = $1 order by a.created_at, a.seq`,
+        [phoneFor('T17')],
+      )
+    ).rows.map((r) => r.kind);
+    expect(rows).toEqual(['system', 'stage_change', 'system', 'stage_change', 'assignment']);
   });
 
   it('unsure leads land in the queue with their question', async () => {
@@ -91,7 +125,6 @@ describe.skipIf(!enabled)('September replay through the pipeline', () => {
   });
 
   it('a call with no extraction goes to needs_review with an alert', async () => {
-    const voice = new MockVoiceProvider('unused');
     const event = MockVoiceProvider.parseEvent({
       type: 'call_ended', providerCallId: 'review-1', from: '+919800009999', startedAt: '2026-09-30T12:00:00+05:30',
       answeredAt: '2026-09-30T12:00:00+05:30', endedAt: '2026-09-30T12:03:00+05:30', durationSeconds: 180,
@@ -99,18 +132,52 @@ describe.skipIf(!enabled)('September replay through the pipeline', () => {
     });
     if (event.type !== 'call_ended') throw new Error('unexpected');
     const { handleCallEnded } = await import('@/pipeline/processCall');
-    const result = await handleCallEnded({ db, extractor: new FixtureExtractor({}), voice }, event.interaction);
+    const result = await handleCallEnded({ db, extractor: new FixtureExtractor({}) }, event.interaction);
     expect(result.status).toBe('needs_review');
     expect(await one(`select count(*)::int as n from alerts where type = 'extraction_failed'`)).toEqual({ n: 1 });
   });
 
   it('greeting context: a known caller who rang back within 30 minutes resumes the enquiry', async () => {
-    const deps = { db, extractor: new FixtureExtractor({}), voice: new MockVoiceProvider('unused') };
+    const deps = { db, extractor: new FixtureExtractor({}) };
     const resumed = await getCallerContext(deps, phoneFor('T17'), new Date('2026-09-22T14:30:00+05:30'));
     expect(resumed).toMatchObject({ known: true, name: 'Ritu Kapoor', resuming: { summary: expect.any(String) } });
     const later = await getCallerContext(deps, phoneFor('T17'), new Date('2026-09-23T10:00:00+05:30'));
     expect(later.resuming).toBeNull();
     const unknown = await getCallerContext(deps, '+919811111111', new Date());
     expect(unknown).toEqual({ known: false, name: null, nameConfirmed: false, resuming: null });
+  });
+
+  it('daily job: follow-up reminder after a stale consultation, created once', async () => {
+    await db.query(
+      `update enquiries set stage = 'consultation_done', stage_changed_at = '2026-09-10', last_activity_at = '2026-09-10'
+        where caller_id = (select id from callers where phone = $1)`,
+      [phoneFor('T05')],
+    );
+    const first = await runDailyJobs(db, new Date('2026-09-26T09:00:00+05:30'));
+    const second = await runDailyJobs(db, new Date('2026-09-26T09:00:00+05:30'));
+    expect(first.followUpsCreated).toBe(1);
+    expect(second.followUpsCreated).toBe(0);
+    const t = await one<{ assigned_to: string | null; title: string }>(
+      `select t.assigned_to, t.title from tasks t join enquiries e on e.id = t.enquiry_id
+        where t.type = 'follow_up' and e.caller_id = (select id from callers where phone = $1)`,
+      [phoneFor('T05')],
+    );
+    expect(t.title).toMatch(/^Follow up after consultation/);
+  });
+
+  it('daily job: transcripts older than the retention period are deleted, metrics kept', async () => {
+    // 30 days after 3 Oct reaches back to 3 Sep: only T01 (2 Sep) is older.
+    const r = await runDailyJobs(db, new Date('2026-10-03T12:00:00+05:30'));
+    expect(r.callsRedacted).toBe(1);
+    const t01 = await one<{ transcript: unknown; outcome: string; redacted_at: Date | null; parsed: Record<string, unknown> }>(
+      `select c.transcript, c.outcome, c.redacted_at, x.parsed from calls c
+         join extractions x on x.call_id = c.id where c.provider_call_id = 'sep-T01'`,
+    );
+    expect(t01.transcript).toBeNull();
+    expect(t01.redacted_at).not.toBeNull();
+    expect(t01.outcome).toBe('qualified');
+    expect(t01.parsed).not.toHaveProperty('caller');
+    expect(t01.parsed).not.toHaveProperty('handoff_note');
+    expect(t01.parsed).toHaveProperty('project');
   });
 });

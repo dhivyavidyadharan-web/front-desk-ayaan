@@ -14,8 +14,10 @@ export function createPool(connectionString: string): pg.Pool {
 
 export function getPool(): pg.Pool {
   if (!pool) {
-    const url = process.env.DATABASE_URL;
-    if (!url) throw new Error('DATABASE_URL is not set');
+    // `npm run dev:test` points the local app at the Neon test branch.
+    const key = process.env.USE_TEST_DB ? 'DATABASE_URL_TEST' : 'DATABASE_URL';
+    const url = process.env[key];
+    if (!url) throw new Error(`${key} is not set`);
     pool = createPool(url);
   }
   return pool;

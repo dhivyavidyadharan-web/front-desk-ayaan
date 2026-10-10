@@ -1,13 +1,15 @@
-// Database tasks against DATABASE_URL_UNPOOLED.
+// Database tasks against DATABASE_URL_UNPOOLED, or DATABASE_URL_TEST with --test.
 //   migrate : apply db/migrations/*.sql in order, once each (tracked in schema_migrations)
 //   seed    : run db/seed.sql (only when the config table is empty)
 //   test    : run db/tests/*.sql (each test file rolls itself back)
+//   seed-dev-staff : add fake staff for local dashboard testing (test branch only)
 import { readdirSync, readFileSync } from 'node:fs';
 import pg from 'pg';
 
-const url = process.env.DATABASE_URL_UNPOOLED;
+const target = process.argv.includes('--test') ? 'DATABASE_URL_TEST' : 'DATABASE_URL_UNPOOLED';
+const url = process.env[target];
 if (!url) {
-  console.error('DATABASE_URL_UNPOOLED is not set (.env.local).');
+  console.error(`${target} is not set (.env.local).`);
   process.exit(1);
 }
 
@@ -53,7 +55,13 @@ async function test() {
   console.log('all database tests passed');
 }
 
-const tasks = { migrate, seed, test };
+async function seedDevStaff() {
+  if (target !== 'DATABASE_URL_TEST') throw new Error('seed-dev-staff only runs against the test branch (--test)');
+  await client.query(readFileSync('db/seed_dev_staff.sql', 'utf8'));
+  console.log('dev staff seeded');
+}
+
+const tasks = { migrate, seed, test, 'seed-dev-staff': seedDevStaff };
 const task = tasks[process.argv[2]];
 if (!task) {
   console.error(`usage: node scripts/db.mjs <${Object.keys(tasks).join('|')}>`);

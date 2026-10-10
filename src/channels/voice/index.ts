@@ -11,10 +11,3 @@ export function getVoiceProvider(name: string): VoiceProvider | null {
       return null;
   }
 }
-
-/** The provider used for outbound calls (callbacks). */
-export function getActiveVoiceProvider(): VoiceProvider {
-  const provider = getVoiceProvider(process.env.VOICE_PROVIDER ?? 'mock');
-  if (!provider) throw new Error(`VOICE_PROVIDER "${process.env.VOICE_PROVIDER}" is not available`);
-  return provider;
-}

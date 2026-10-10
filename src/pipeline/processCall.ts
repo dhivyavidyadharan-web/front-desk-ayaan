@@ -1,8 +1,7 @@
 // What happens around a call. Channel-agnostic: it only sees an Interaction.
 //   call start → getCallerContext (name for the greeting; resume a dropped enquiry)
-//   call end   → handleCallEnded (store, extract, decide, scan, queue, then side-effects)
+//   call end   → handleCallEnded (store, extract, decide, scan, move the lead, queue reminders)
 import type { Interaction } from '../channels/interaction';
-import type { VoiceProvider } from '../channels/voice/VoiceProvider';
 import {
   configFromRows,
   isOutsideOfficeHours,
@@ -10,6 +9,7 @@ import {
   type OpsConfig,
   type RubricConfig,
 } from '../core/config';
+import { nextStageAfterCall, scoreLead, STAGE_LABELS, type LeadStage } from '../core/crm';
 import { decideOutcome, type Decision, type Outcome } from '../core/decideOutcome';
 import { shouldJoinPreviousEnquiry } from '../core/enquiry';
 import { scanTranscriptForPriceLeaks } from '../core/priceLeak';
@@ -25,7 +25,6 @@ export interface CostRates {
 export interface PipelineDeps {
   db: Db;
   extractor: Extractor;
-  voice: VoiceProvider;
   now?: () => Date;
   costRates?: CostRates;
 }
@@ -45,7 +44,8 @@ export interface ProcessResult {
   status: 'processed' | 'needs_review';
   flags: string[];
   priceLeak: boolean;
-  callbackPlaced: boolean;
+  /** A "call back" reminder was put in the queue (missed or dropped call). */
+  callbackReminder: boolean;
   duplicate: boolean;
 }
 
@@ -123,7 +123,7 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
       status: done.status === 'processed' ? 'processed' : 'needs_review',
       flags: done.flags,
       priceLeak: done.price_leak_flag,
-      callbackPlaced: false,
+      callbackReminder: false,
       duplicate: true,
     };
   }
@@ -168,15 +168,16 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
       `insert into public.calls (
          enquiry_id, caller_id, provider, provider_call_id, direction, from_number, started_at, answered_at,
          ended_at, duration_seconds, outside_hours, status, outcome, decline_reason, flags, open_question,
-         transcript, recording_url, language, price_leak_flag, prompt_version)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+         transcript, recording_url, language, price_leak_flag, prompt_version, criteria)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
        on conflict (provider, provider_call_id) do update set
          enquiry_id = excluded.enquiry_id, caller_id = excluded.caller_id, answered_at = excluded.answered_at,
          ended_at = excluded.ended_at, duration_seconds = excluded.duration_seconds,
          outside_hours = excluded.outside_hours, status = excluded.status, outcome = excluded.outcome,
          decline_reason = excluded.decline_reason, flags = excluded.flags, open_question = excluded.open_question,
          transcript = excluded.transcript, recording_url = excluded.recording_url, language = excluded.language,
-         price_leak_flag = excluded.price_leak_flag, prompt_version = excluded.prompt_version
+         price_leak_flag = excluded.price_leak_flag, prompt_version = excluded.prompt_version,
+         criteria = excluded.criteria
        returning id`,
       [
         enquiryId,
@@ -200,6 +201,7 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
         extraction?.language ?? null,
         leaks.length > 0,
         extracted.attempts.at(-1)?.promptVersion ?? null,
+        decision?.criteria ? JSON.stringify(decision.criteria) : null,
       ],
     );
     const callId = call.rows[0]!.id;
@@ -225,17 +227,58 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
 
     if (decision) {
       // A missed call doesn't overwrite an outcome the enquiry already has.
+      const enq = await tx.query<{ stage: LeadStage | null; assigned_designer_id: string | null }>(
+        `select stage, assigned_designer_id from public.enquiries where id = $1 for update`,
+        [enquiryId],
+      );
+      const current = enq.rows[0]!;
+      const stage = nextStageAfterCall(current.stage, decision.outcome);
+      const scored = scoreLead(extraction, decision);
       await tx.query(
         `update public.enquiries set
            outcome = case when $2::text = 'missed' and outcome is not null then outcome else ($2::text)::public.call_outcome end,
            decline_reason = case when $2::text = 'missed' and outcome is not null then decline_reason else $3 end,
-           last_activity_at = greatest(last_activity_at, $4)
+           last_activity_at = greatest(last_activity_at, $4),
+           stage = $5::public.lead_stage,
+           stage_changed_at = case when stage is distinct from $5::public.lead_stage then $4 else stage_changed_at end,
+           lost_reason = case when $5::text = 'lost' and stage is distinct from 'lost' then $6 else lost_reason end,
+           score = coalesce($7::public.lead_score, score),
+           score_reasons = case when $7::text is null then score_reasons else $8::text[] end
          where id = $1`,
-        [enquiryId, decision.outcome, decision.declineReason, lastActivity],
+        [
+          enquiryId,
+          decision.outcome,
+          decision.declineReason,
+          lastActivity,
+          stage,
+          decision.declineReason ? `Declined on call: ${decision.declineReason}` : null,
+          scored?.score ?? null,
+          scored?.reasons ?? [],
+        ],
       );
+
+      const outcomeText = decision.outcome === 'escalate_complaint' ? 'complaint' : decision.outcome.replace('_', ' ');
+      await logActivity(tx, enquiryId, 'system', `Call ${interaction.direction === 'inbound' ? 'received' : 'made'}: ${outcomeText}${decision.declineReason ? ` (${decision.declineReason})` : ''}.`, lastActivity);
+      if (stage && stage !== current.stage) {
+        await logActivity(tx, enquiryId, 'stage_change', `Stage: ${current.stage ? STAGE_LABELS[current.stage] : 'none'} → ${STAGE_LABELS[stage]}.`, lastActivity);
+      }
+
+      // Qualified and not yet assigned → round-robin over active designers.
+      if (decision.outcome === 'qualified' && !current.assigned_designer_id) {
+        const next = await tx.query<{ id: string; name: string }>(
+          `select id, name from public.designers where active
+            order by last_assigned_at nulls first, name limit 1 for update skip locked`,
+        );
+        const designer = next.rows[0];
+        if (designer) {
+          await tx.query(`update public.designers set last_assigned_at = $2 where id = $1`, [designer.id, now]);
+          await tx.query(`update public.enquiries set assigned_designer_id = $2 where id = $1`, [enquiryId, designer.id]);
+          await logActivity(tx, enquiryId, 'assignment', `Assigned to ${designer.name} (round-robin).`, lastActivity);
+        }
+      }
     }
 
-    // The caller rang back: stop the bot calling them.
+    // The caller rang back: the "call back" reminder is no longer needed.
     if (interaction.direction === 'inbound' && answered) {
       await tx.query(
         `update public.tasks set status = 'cancelled', resolved_at = $2,
@@ -246,28 +289,26 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
       );
     }
 
-    let callbackTaskId: string | null = null;
+    let callbackReminder = false;
     if (decision?.outcome === 'missed' && interaction.direction === 'inbound') {
-      callbackTaskId = (
-        await tx.query<{ id: string }>(
-          `insert into public.tasks (type, call_id, enquiry_id, next_attempt_at) values ('callback', $1, $2, $3) returning id`,
-          [callId, enquiryId, now],
-        )
-      ).rows[0]!.id;
+      const dropped = interaction.turns.some((t) => t.speaker === 'caller');
+      await tx.query(
+        `insert into public.tasks (type, call_id, enquiry_id, title, due_at) values ('callback', $1, $2, $3, $4)`,
+        [callId, enquiryId, `Call back ${interaction.from}${dropped ? ' (call dropped)' : ' (missed call)'}`, now],
+      );
+      callbackReminder = true;
     }
     if (decision?.outcome === 'unsure') {
-      await tx.query(`insert into public.tasks (type, call_id, enquiry_id, question) values ('unsure', $1, $2, $3)`, [
-        callId,
-        enquiryId,
-        decision.openQuestion,
-      ]);
+      await tx.query(
+        `insert into public.tasks (type, call_id, enquiry_id, title, question, due_at) values ('unsure', $1, $2, $3, $4, $5)`,
+        [callId, enquiryId, 'Follow up: one open question', decision.openQuestion, now],
+      );
     }
     if (decision?.outcome === 'escalate_complaint') {
-      await tx.query(`insert into public.tasks (type, call_id, enquiry_id, question) values ('complaint', $1, $2, $3)`, [
-        callId,
-        enquiryId,
-        extraction?.complaint.summary ?? null,
-      ]);
+      await tx.query(
+        `insert into public.tasks (type, call_id, enquiry_id, title, question, due_at) values ('complaint', $1, $2, $3, $4, $5)`,
+        [callId, enquiryId, 'Existing client complaint', extraction?.complaint.summary ?? null, now],
+      );
       await tx.query(`insert into public.alerts (type, call_id, details) values ('complaint', $1, $2)`, [
         callId,
         JSON.stringify(extraction?.complaint ?? {}),
@@ -306,14 +347,8 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
       ],
     );
 
-    return { callId, enquiryId, callbackTaskId };
+    return { callId, enquiryId, callbackReminder };
   });
-
-  // Side-effects after commit, recorded in `actions` so retries don't repeat them.
-  let callbackPlaced = false;
-  if (stored.callbackTaskId) {
-    callbackPlaced = await placeCallback(deps, stored.callId, stored.callbackTaskId, interaction, ops, now);
-  }
 
   return {
     callId: stored.callId,
@@ -322,53 +357,14 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
     status,
     flags: decision?.flags ?? [],
     priceLeak: leaks.length > 0,
-    callbackPlaced,
+    callbackReminder: stored.callbackReminder,
     duplicate: false,
   };
 }
 
-async function placeCallback(
-  deps: PipelineDeps,
-  callId: string,
-  taskId: string,
-  interaction: Interaction,
-  ops: OpsConfig,
-  now: Date,
-): Promise<boolean> {
-  const reason = interaction.turns.some((t) => t.speaker === 'caller') ? 'dropped' : 'missed';
-  try {
-    const { providerCallId } = await deps.voice.startOutboundCall({
-      to: interaction.from,
-      reason,
-      context: reason === 'dropped' ? 'The call dropped earlier; continue the enquiry.' : 'Returning a missed call to Aangan Studio.',
-    });
-    await deps.db.query(
-      `update public.tasks set attempts = attempts + 1, status = 'in_progress',
-         next_attempt_at = $2::timestamptz + make_interval(mins => $3)
-       where id = $1 and status = 'open'`,
-      [taskId, now, ops.callbackRetryMinutes],
-    );
-    await recordAction(deps.db, callId, 'outbound_callback', 'succeeded', providerCallId, null);
-    return true;
-  } catch (err) {
-    await recordAction(deps.db, callId, 'outbound_callback', 'failed', null, (err as Error).message);
-    return false;
-  }
-}
-
-async function recordAction(
-  db: Db,
-  callId: string,
-  kind: string,
-  status: 'succeeded' | 'failed',
-  externalId: string | null,
-  error: string | null,
-): Promise<void> {
-  await db.query(
-    `insert into public.actions (call_id, kind, status, attempts, external_id, error)
-     values ($1, $2::public.action_kind, $3::public.action_status, 1, $4, $5)
-     on conflict (call_id, kind) do update set status = excluded.status, attempts = public.actions.attempts + 1,
-       external_id = coalesce(excluded.external_id, public.actions.external_id), error = excluded.error`,
-    [callId, kind, status, externalId, error],
+async function logActivity(tx: Tx, enquiryId: string, kind: string, body: string, at: Date): Promise<void> {
+  await tx.query(
+    `insert into public.activities (enquiry_id, author_name, kind, body, created_at) values ($1, 'System', $2::public.activity_kind, $3, $4)`,
+    [enquiryId, kind, body, at],
   );
 }

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Extraction } from '@/core/extraction';
 import type { MockEvent } from '@/channels/voice/providers/mock';
-import { extraction } from './extractionBuilder';
+import { BASE_EXTRACTION, extraction } from './extractionBuilder';
 
 interface TranscriptFixture {
   id: string;
@@ -53,7 +53,7 @@ const unclear = (reason: string) => ({ result: 'unclear' as const, reason });
 const noTimeline = { stated: null, weeks_until_needed_complete: null, weeks_until_site_available: null };
 
 /** What a correct extraction of each answered call looks like. Keyed by provider call id. */
-export const SEPTEMBER_EXTRACTIONS: Record<string, Extraction> = {
+const RAW_EXTRACTIONS: Record<string, Extraction> = {
   'sep-T01': extraction({ caller: { name: 'Priya', phone: phoneFor('T01') }, referral_source: 'Friend: Shruti Joshi (Aundh client)' }),
   'sep-T02': extraction({
     caller: { name: null, phone: phoneFor('T02') },
@@ -168,6 +168,19 @@ export const SEPTEMBER_EXTRACTIONS: Record<string, Extraction> = {
     decision_maker: { is_caller: true, decider_will_attend: true, note: 'Husband and wife both attending.' },
   }),
 };
+
+// Entries that don't set their own handoff note get one built from their facts, so no call
+// inherits the template's note.
+export const SEPTEMBER_EXTRACTIONS: Record<string, Extraction> = Object.fromEntries(
+  Object.entries(RAW_EXTRACTIONS).map(([id, e]) => {
+    if (e.handoff_note !== BASE_EXTRACTION.handoff_note || id === 'sep-T01') return [id, e];
+    const who = e.caller.name ?? 'Caller';
+    const where = e.project.area_locality ? ` in ${e.project.area_locality}` : '';
+    const size = e.project.size_sqft ? ` (${e.project.size_sqft.toLocaleString('en-IN')} sq ft)` : '';
+    const when = e.timeline.stated ? ` Timeline: ${e.timeline.stated}.` : '';
+    return [id, { ...e, handoff_note: `${who}${where}${size}: ${e.project.scope_summary}${when}` }];
+  }),
+);
 
 /** Expected outcome per call (brief §8 plus agreed extras). */
 export const SEPTEMBER_EXPECTED: Record<string, string> = {

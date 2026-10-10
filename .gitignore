@@ -14,3 +14,4 @@ pricing.md
 **/pricing.md
 next-env.d.ts
 *.tsbuildinfo
+.claude/

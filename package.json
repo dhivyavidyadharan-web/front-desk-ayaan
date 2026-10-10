@@ -16,7 +16,8 @@
     "test:integration": "INTEGRATION=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run tests/integration",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "dev:test": "USE_TEST_DB=1 next dev"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
