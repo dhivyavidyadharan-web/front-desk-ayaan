@@ -87,6 +87,15 @@ export class VaaniVoiceProvider implements VoiceProvider {
     return { token: body.token, roomName: body.room_name, url: body.connection_url };
   }
 
+  /** The finished call's transcript text, or null while Vaani is still preparing it. */
+  async fetchTranscript(callId: string): Promise<string | null> {
+    const res = await this.fetchImpl(`${API}/api/transcript/${encodeURIComponent(callId)}`, { headers: { 'X-API-Key': this.config.apiKey } });
+    if (!res.ok) return null;
+    const body = (await res.json().catch(() => null)) as { transcript?: string; status_code?: number } | null;
+    if (!body?.transcript || (body.status_code && body.status_code !== 200)) return null;
+    return body.transcript;
+  }
+
   async parseWebhook(req: Request): Promise<VoiceEvent> {
     const token = new URL(req.url).searchParams.get('token') ?? '';
     const a = Buffer.from(token);

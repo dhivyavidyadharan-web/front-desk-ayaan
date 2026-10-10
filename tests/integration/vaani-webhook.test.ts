@@ -17,6 +17,7 @@ describe.skipIf(!enabled)('Vaani webhook route', () => {
     process.env.VAANI_WEBHOOK_SECRET = SECRET;
     delete process.env.GEMINI_API_KEY; // no live model calls in tests → needs_review path
     db = createPool(process.env.DATABASE_URL_TEST!);
+    await db.query(`delete from public.calls where provider = 'vaani' and provider_call_id in ('itest-room-1', 'itest-room-2', 'vaani-dashboard-test-room')`);
     await db.query(`delete from public.voice_sessions where phone = $1`, [PHONE]);
     await db.query(`delete from public.callers where phone = $1`, [PHONE]);
     await db.query(

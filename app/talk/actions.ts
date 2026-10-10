@@ -7,9 +7,12 @@ import { normalizePhone } from '@/core/phone';
 import { getPool } from '@/db/client';
 import { FixtureExtractor } from '@/llm/extractor';
 import { getCallerContext } from '@/pipeline/processCall';
+import { collectWebCall } from '@/pipeline/collectWebCall';
+import { extractorFromEnv } from '@/llm';
+import { notifierFromEnv } from '@/integrations/notifier';
 import { fillTemplate, loadPrompt } from '@/prompts';
 
-export type StartCallResult = { ok: true; token: string; url: string } | { ok: false; error: string };
+export type StartCallResult = { ok: true; token: string; url: string; callId: string } | { ok: false; error: string };
 
 const LANGS = ['en', 'hi', 'mr'] as const;
 type Lang = (typeof LANGS)[number];
@@ -58,9 +61,20 @@ export async function startWebCall(input: { name: string; phone: string; languag
        values ('vaani', $1, $2, $3, $4, now(), $5)`,
       [session.roomName, phone, name, language, prompt.version],
     );
-    return { ok: true, token: session.token, url: session.url };
+    return { ok: true, token: session.token, url: session.url, callId: session.roomName };
   } catch (err) {
     console.error('startWebCall failed', err);
     return { ok: false, error: 'We couldn’t connect the call. Please try again.' };
   }
+}
+
+/** Called by the page after hang-up: fetch the transcript from Vaani and process it. */
+export async function finishWebCall(callId: string): Promise<'done' | 'pending' | 'unknown'> {
+  const config = vaaniConfigFromEnv();
+  if (!config || !/^[A-Za-z0-9_.:-]{1,120}$/.test(callId)) return 'unknown';
+  const db = getPool();
+  const done = await db.query(`select 1 from public.calls where provider = 'vaani' and provider_call_id = $1`, [callId]);
+  if (done.rowCount) return 'done';
+  const r = await collectWebCall({ db, extractor: extractorFromEnv(), notifier: notifierFromEnv(db) }, new VaaniVoiceProvider(config), callId);
+  return r.status;
 }

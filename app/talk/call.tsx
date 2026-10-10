@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
-import { startWebCall } from './actions';
+import { finishWebCall, startWebCall } from './actions';
 
 type Phase = 'form' | 'connecting' | 'live' | 'ended';
 
@@ -11,6 +11,7 @@ export function TalkCall() {
   const [muted, setMuted] = useState(false);
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const roomRef = useRef<Room | null>(null);
+  const callIdRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => void roomRef.current?.disconnect(), []);
@@ -29,6 +30,7 @@ export function TalkCall() {
       setPhase('form');
       return;
     }
+    callIdRef.current = r.callId;
     const room = new Room({ adaptiveStream: true, dynacast: true });
     roomRef.current = room;
     room.on(RoomEvent.TrackSubscribed, (track) => {
@@ -41,6 +43,7 @@ export function TalkCall() {
       setPhase('ended');
       setAgentSpeaking(false);
       if (audioRef.current) audioRef.current.innerHTML = '';
+      void collect(callIdRef.current);
     });
     try {
       await room.connect(r.url, r.token);
@@ -54,6 +57,17 @@ export function TalkCall() {
       const denied = err instanceof Error && /permission|NotAllowed/i.test(`${err.name} ${err.message}`);
       setError(denied ? 'Please allow microphone access so we can hear you, then try again.' : 'We couldn’t connect the call. Please try again.');
       setPhase('form');
+    }
+  }
+
+  // After hang-up, ask the server to fetch the transcript from Vaani (it can take a minute to
+  // be ready). The daily job picks up anything still missing if the page is closed early.
+  async function collect(callId: string | null) {
+    if (!callId) return;
+    for (let attempt = 0; attempt < 12; attempt++) {
+      await new Promise((r) => setTimeout(r, attempt === 0 ? 8000 : 15000));
+      const status = await finishWebCall(callId).catch(() => 'pending' as const);
+      if (status !== 'pending') return;
     }
   }
 

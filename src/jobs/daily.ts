@@ -1,4 +1,5 @@
 // Runs once a day (Vercel cron; the Hobby plan allows daily schedules).
+//   0. Browser calls whose transcript never reached us are collected from Vaani (see route).
 //   1. Consultation done, no update for N days → follow-up reminder for the lead's designer.
 //   2. Retention: after `retention_days`, delete transcripts, recordings and free-text personal
 //      details from extractions. Outcomes, flags, costs and area/scope stay for the metrics.
