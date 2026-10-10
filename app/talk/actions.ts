@@ -55,6 +55,8 @@ export async function startWebCall(input: { name: string; phone: string; languag
   const prompt = loadPrompt('voice_agent');
   const systemPrompt = fillTemplate(prompt.text, {
     caller_name: name,
+    // Never invent an address: until STUDIO_ADDRESS is set, point to the confirmation email.
+    studio_address: process.env.STUDIO_ADDRESS?.trim() || 'in Pune; the exact address will be in the confirmation email',
     returning_context: ctx.resuming
       ? `Their previous call dropped a few minutes ago. What we know so far: ${ctx.resuming.summary ?? 'very little'}. Continue from there; don't start the questions over.`
       : ctx.known

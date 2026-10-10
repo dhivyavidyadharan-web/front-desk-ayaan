@@ -32,6 +32,12 @@ describe('prompts', () => {
     expect(withoutProhibitions).not.toMatch(/consultation is free|free consultation/i);
   });
 
+  it('voice agent offers online or studio consultations and only checked times', () => {
+    expect(voice).toMatch(/online\*\* \(video call\) or \*\*at our studio/);
+    expect(voice).toMatch(/Only offer times the tool shows as free/);
+    expect(voice).toMatch(/Never name the designer/);
+  });
+
   it('voice agent quotes no design or execution durations', () => {
     expect(voice).not.toMatch(/3[–-]4 weeks|8[–-]1[06] weeks/);
   });
@@ -39,6 +45,7 @@ describe('prompts', () => {
   it('voice agent prompt has the template slots the session fills', () => {
     expect(voice).toContain('{{caller_name}}');
     expect(voice).toContain('{{returning_context}}');
+    expect(voice).toContain('{{studio_address}}');
   });
 });
 

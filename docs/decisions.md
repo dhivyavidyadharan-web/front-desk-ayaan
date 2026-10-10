@@ -5,7 +5,8 @@ The source brief is "Build brief: Aangan Studio inbound call agent". This file r
 ## Product decisions (2026-10-09)
 
 - **No "free consultation."** The agent never says the consultation is free. Once a lead qualifies, it offers: "Would you like to set up a consultation? That's the next step."
-- **Consultations are online.** The agent books any free slot on the assigned designer's cal.com calendar. cal.com sends the confirmation and video link to the client and the designer.
+- **Consultations: online or at the studio.** For a qualified lead who wants one, the agent asks online vs studio and the caller's preferred time, checks designer availability, offers only free slots, books, and confirms the email. Online → cal.com confirmation with the video link; studio → confirmation with time and studio address (`STUDIO_ADDRESS`; never invented). The designer is never named on the call.
+- **The dashboard is internal only** (founder/admin, designers, front desk). The only customer touchpoints are the call (`/talk` for WebRTC) and the booking confirmation.
 - **Fully automated.** The bot runs when the front desk or Nikhil isn't available, and Nikhil does not sign off on rules. Uncertain rules are stored in `config` with `confirmed = false` and can be edited on the Settings page.
 - **Telegram.** Every call's summary and transcript go to the studio team group, and qualified leads also go to the assigned designer. The Acknowledge button is kept for metrics only; nobody is asked to act at night, and there is no escalation timer.
 - **Voice: Vaani over WebRTC.** Callers use the public `/talk` page (name, mobile, language, recording consent). The server starts each Vaani session with the versioned `prompts/voice_agent.md` and the greeting; the transcript arrives in Vaani's `call_postprocessing` webhook, secured with a secret URL token because Vaani doesn't sign webhooks. Sessions are rate-limited per number and overall.
