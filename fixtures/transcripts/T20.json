@@ -1,0 +1,41 @@
+{
+  "id": "T20",
+  "started_at": "2026-09-25T09:15:00+05:30",
+  "answered": true,
+  "header": "T20 · Phone · 25 September · 9:15am · 4 min 44 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Good morning. I’m Pooja. I have a 2BHK in Magarpatta — Cybercity area. We’ve been wanting to properly design the interiors for a while. Kitchen, both bedrooms, living room. About 900 sq ft."
+    },
+    {
+      "speaker": "agent",
+      "text": "Good scope for us. How soon are you looking to start?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We’re flexible — a January start for execution would be ideal."
+    },
+    {
+      "speaker": "agent",
+      "text": "That works well. Are you the owner?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes — my husband and I. We both want to be at the consultation."
+    },
+    {
+      "speaker": "agent",
+      "text": "Excellent. Can I book that now?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Please."
+    }
+  ],
+  "notes": []
+}

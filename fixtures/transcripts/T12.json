@@ -1,0 +1,45 @@
+{
+  "id": "T12",
+  "started_at": "2026-09-15T10:05:00+05:30",
+  "answered": true,
+  "header": "T12 · Phone · 15 September · 10:05am · 7 min 30 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "I’m calling about a villa project in Kalyani Nagar. My name is Anand Sharma. The property is about 5,500 sq ft — ground plus two floors. Full end-to-end design."
+    },
+    {
+      "speaker": "agent",
+      "text": "That’s a significant project. Is this a new property or an existing home?"
+    },
+    {
+      "speaker": "caller",
+      "text": "New construction. Possession was last month. Completely empty."
+    },
+    {
+      "speaker": "agent",
+      "text": "And your timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "March next year to move in. No rush."
+    },
+    {
+      "speaker": "agent",
+      "text": "Good time to start. Would you like our principal designer to come to site for the first consultation?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes — this week or next if possible."
+    },
+    {
+      "speaker": "agent",
+      "text": "Let me check the calendar and revert by end of day."
+    }
+  ],
+  "notes": []
+}

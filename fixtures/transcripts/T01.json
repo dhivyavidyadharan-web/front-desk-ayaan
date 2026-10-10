@@ -1,0 +1,57 @@
+{
+  "id": "T01",
+  "started_at": "2026-09-02T10:23:00+05:30",
+  "answered": true,
+  "header": "T01 · Phone · 2 September · 10:23am · 4 min 12 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi, I’m Priya. I got your number from a friend — Shruti Joshi. She had her flat done by you in Aundh."
+    },
+    {
+      "speaker": "agent",
+      "text": "Of course — thank you for calling. What are you looking to do?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We have a 3BHK in Kothrud — Dahanukar Colony. We bought it two years ago and it still looks like the builder flat. We want to redo the whole thing — kitchen, living room, both bedrooms."
+    },
+    {
+      "speaker": "agent",
+      "text": "That sounds like a complete redesign. How big is the apartment?"
+    },
+    {
+      "speaker": "caller",
+      "text": "About 1,400 sq ft carpet."
+    },
+    {
+      "speaker": "agent",
+      "text": "And your timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We’d like to be done by March. We’re in no rush."
+    },
+    {
+      "speaker": "agent",
+      "text": "Perfect. Are you the owner?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes — myself and my husband. He knows we’re calling and is happy to go ahead."
+    },
+    {
+      "speaker": "agent",
+      "text": "Lovely. Can I take your number and schedule a consultation?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Sure. (gives number)"
+    }
+  ],
+  "notes": []
+}

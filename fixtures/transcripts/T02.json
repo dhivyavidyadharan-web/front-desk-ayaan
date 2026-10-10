@@ -1,0 +1,49 @@
+{
+  "id": "T02",
+  "started_at": "2026-09-03T14:41:00+05:30",
+  "answered": true,
+  "header": "T02 · Phone · 3 September · 2:41pm · 5 min 08 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi. I was looking at your work on Instagram. I have a 2BHK in Wakad — can you tell me roughly how much something like that would cost?"
+    },
+    {
+      "speaker": "agent",
+      "text": "Our pricing depends on the materials and the scope — the best way to get a clear picture is a consultation with one of our designers, who can walk you through everything. What are you planning to do?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Full redesign — modular kitchen, wardrobes, living room, both bedrooms. About 950 sq ft."
+    },
+    {
+      "speaker": "agent",
+      "text": "Good scope. What’s your timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We move in November — so maybe starting design from October?"
+    },
+    {
+      "speaker": "agent",
+      "text": "That works well. Shall I set up a consultation?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes, but can you give me a rough ballpark first? Even a range?"
+    },
+    {
+      "speaker": "agent",
+      "text": "I genuinely can’t — it varies quite a bit based on materials. Giving you a number without seeing the site would be misleading. The designer will go through all of that with you — the consultation is free and there’s no obligation."
+    },
+    {
+      "speaker": "caller",
+      "text": "Okay, fair enough. Let’s book it."
+    }
+  ],
+  "notes": []
+}

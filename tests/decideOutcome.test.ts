@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '@/core/config';
 import { decideOutcome } from '@/core/decideOutcome';
-import { extraction } from './helpers/extraction';
+import { extraction } from '../fixtures/extractionBuilder';
 
 const call = (iso: string) => ({ answered: true, startedAt: new Date(iso) });
 const decide = (iso: string, e: ReturnType<typeof extraction> | null, config = DEFAULT_CONFIG) =>

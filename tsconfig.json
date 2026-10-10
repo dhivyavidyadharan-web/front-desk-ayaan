@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023", "DOM"],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
@@ -13,8 +16,29 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "jsx": "preserve",
+    "allowJs": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["src", "tests"]
+  "include": [
+    "next-env.d.ts",
+    "app",
+    "src",
+    "tests",
+    "fixtures",
+    "scripts/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

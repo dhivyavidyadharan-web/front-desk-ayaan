@@ -1,0 +1,45 @@
+{
+  "id": "T15",
+  "started_at": "2026-09-18T15:12:00+05:30",
+  "answered": true,
+  "header": "T15 · Phone · 18 September · 3:12pm · 5 min 44 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi, I’m Smita. I’m getting possession of my flat in Undri in about six weeks. 2BHK, 875 sq ft. I want to start the design right away."
+    },
+    {
+      "speaker": "agent",
+      "text": "Six weeks is just enough lead time to get the design finalised before execution begins. What are you planning?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Full home — kitchen, wardrobes, living room. The full package."
+    },
+    {
+      "speaker": "agent",
+      "text": "Good scope. Are you the owner?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes — my husband and I. He said to go ahead and book the consultation."
+    },
+    {
+      "speaker": "agent",
+      "text": "Can we see the site in its current state, or do you need to wait for possession?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We can go now — the builder will let us in."
+    },
+    {
+      "speaker": "agent",
+      "text": "Even better. Let me get a designer’s availability."
+    }
+  ],
+  "notes": []
+}

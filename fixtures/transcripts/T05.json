@@ -1,0 +1,45 @@
+{
+  "id": "T05",
+  "started_at": "2026-09-05T10:52:00+05:30",
+  "answered": true,
+  "header": "T05 · Phone · 5 September · 10:52am · 6 min 44 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi, this is Aarti Mehta. Vikram Agarwal asked me to call — he’s a close friend of Nikhil’s."
+    },
+    {
+      "speaker": "agent",
+      "text": "Of course, thank you. What are you looking for?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We have a 4BHK in Koregaon Park — about 2,400 sq ft carpet. Complete redesign. New flooring, kitchen, all four bedrooms. We’ve already moved out temporarily."
+    },
+    {
+      "speaker": "agent",
+      "text": "That’s a significant project. Do you have a timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We want to move back in by February. About 4 months."
+    },
+    {
+      "speaker": "agent",
+      "text": "That should work well. Would you prefer a site visit for the consultation?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes please — Vikram said your team does that."
+    },
+    {
+      "speaker": "agent",
+      "text": "Absolutely. Can I check your availability for early next week?"
+    }
+  ],
+  "notes": []
+}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, configFromRows } from '@/core/config';
 import { shouldJoinPreviousEnquiry } from '@/core/enquiry';
 import { ExtractionSchema } from '@/core/extraction';
-import { BASE_EXTRACTION } from './helpers/extraction';
+import { BASE_EXTRACTION } from '../fixtures/extractionBuilder';
 
 describe('ExtractionSchema', () => {
   it('accepts a valid extraction', () => {

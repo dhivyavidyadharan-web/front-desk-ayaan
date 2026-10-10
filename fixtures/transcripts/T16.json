@@ -1,0 +1,39 @@
+{
+  "id": "T16",
+  "started_at": "2026-09-19T10:38:00+05:30",
+  "answered": true,
+  "header": "T16 · Phone · 19 September · 10:38am · 5 min 18 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi — I’d called on Monday about a project. Someone said they’d get back to me. It’s been two days."
+    },
+    {
+      "speaker": "agent",
+      "text": "I’m very sorry. Can I get your name?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Girish Nair. I called Monday afternoon. I told someone about my 3BHK in Viman Nagar and gave my number."
+    },
+    {
+      "speaker": "agent",
+      "text": "I apologise — I don’t see a note. Can you give me your details again? I’ll book the consultation directly now so it doesn’t slip again."
+    },
+    {
+      "speaker": "caller",
+      "text": "This is not a good sign if you forget before you even start."
+    },
+    {
+      "speaker": "agent",
+      "text": "You’re absolutely right, and I’m sorry. Let me make this right now. Handle with care."
+    }
+  ],
+  "notes": [
+    "Note: Enquiry originally received Monday — no follow-up. Re-logged Friday. Caller frustrated."
+  ]
+}

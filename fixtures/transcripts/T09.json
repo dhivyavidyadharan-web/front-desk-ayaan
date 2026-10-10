@@ -1,0 +1,39 @@
+{
+  "id": "T09",
+  "started_at": "2026-09-10T11:32:00+05:30",
+  "answered": true,
+  "header": "T09 · Phone · 10 September · 11:32am · 5 min 52 sec — ESCALATE",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "I need to speak to someone right now. My project has been going for three months and my designer hasn’t replied in five days. This is not acceptable."
+    },
+    {
+      "speaker": "agent",
+      "text": "I’m very sorry. Can I take your name and project details?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Sheetal Deshpande. My designer is Aryan. Flat in Viman Nagar — 2BHK. I’ve sent three messages and called twice."
+    },
+    {
+      "speaker": "agent",
+      "text": "Sheetal, I’m getting this to our project team right now. Would you prefer to hold for two minutes, or should I have someone senior call you back within 15 minutes?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Callback. And I want it from Nikhil or a senior person — not just whoever picks up."
+    },
+    {
+      "speaker": "agent",
+      "text": "Noted. I’ll make sure of that."
+    }
+  ],
+  "notes": [
+    "Note: Existing project complaint. Escalated to studio head immediately."
+  ]
+}

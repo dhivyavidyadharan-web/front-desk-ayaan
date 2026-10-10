@@ -1,0 +1,33 @@
+{
+  "id": "T03",
+  "started_at": "2026-09-03T16:15:00+05:30",
+  "answered": true,
+  "header": "T03 · Phone · 3 September · 4:15pm · 2 min 40 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hello, I saw your work on LinkedIn. My name is Suresh Patil. I’m in Nashik — would you be able to take on a project here? I want to redo my home office and study."
+    },
+    {
+      "speaker": "agent",
+      "text": "Thank you for calling. We only work in Pune and PCMC at the moment — we don’t have the vendor network to take on projects outside Pune."
+    },
+    {
+      "speaker": "caller",
+      "text": "Not even for a smaller project?"
+    },
+    {
+      "speaker": "agent",
+      "text": "Even for a smaller project, our execution depends on our contractors being on-site. I’m sorry we can’t help."
+    },
+    {
+      "speaker": "caller",
+      "text": "Alright, understood. Thanks."
+    }
+  ],
+  "notes": []
+}

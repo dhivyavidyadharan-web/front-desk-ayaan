@@ -1,0 +1,33 @@
+{
+  "id": "T10",
+  "started_at": "2026-09-11T14:04:00+05:30",
+  "answered": true,
+  "header": "T10 · Phone · 11 September · 2:04pm · 3 min 40 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi. I have a 1BHK in Kharadi — about 550 sq ft. I want to do the kitchen and one bedroom. My budget is 1 to 1.5 lakh maximum for everything. Is that possible with you?"
+    },
+    {
+      "speaker": "agent",
+      "text": "I appreciate you sharing that. For a kitchen redesign and a bedroom with full execution — materials, furniture, and contractor work — 1 to 1.5 lakh would be significantly below what a project of that scope would cost with us."
+    },
+    {
+      "speaker": "caller",
+      "text": "Even for one bedroom?"
+    },
+    {
+      "speaker": "agent",
+      "text": "Even for one room. I wouldn’t want to bring you to a consultation if the numbers don’t align. I’d suggest checking with local contractors who work at that price point."
+    },
+    {
+      "speaker": "caller",
+      "text": "Okay, thank you for being straight."
+    }
+  ],
+  "notes": []
+}

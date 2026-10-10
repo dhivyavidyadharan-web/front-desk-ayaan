@@ -7,5 +7,8 @@ export default defineConfig({
   },
   test: {
     include: ['tests/**/*.test.ts'],
+    // Integration tests hit the Neon test branch; run them with `npm run test:integration`.
+    exclude: process.env.INTEGRATION ? ['node_modules/**'] : ['tests/integration/**', 'node_modules/**'],
+    testTimeout: process.env.INTEGRATION ? 60_000 : 5_000,
   },
 });

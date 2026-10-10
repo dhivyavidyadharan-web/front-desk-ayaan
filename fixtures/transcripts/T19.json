@@ -1,0 +1,33 @@
+{
+  "id": "T19",
+  "started_at": "2026-09-24T16:02:00+05:30",
+  "answered": true,
+  "header": "T19 · Phone · 24 September · 4:02pm · 2 min 50 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi — I’m planning to open a restaurant in Koregaon Park. I’ve seen your work and I love it. Would you be able to design the interiors?"
+    },
+    {
+      "speaker": "agent",
+      "text": "We appreciate you reaching out. Restaurant and hospitality interiors are outside our current scope — we focus on residential and office spaces. For a restaurant you’d need a studio that specialises in commercial hospitality, which has very different material and compliance requirements."
+    },
+    {
+      "speaker": "caller",
+      "text": "Do you know anyone you could refer?"
+    },
+    {
+      "speaker": "agent",
+      "text": "I don’t have a specific referral I could make confidently, but searching for hospitality interior designers in Pune would give you more relevant options."
+    },
+    {
+      "speaker": "caller",
+      "text": "Alright, thanks."
+    }
+  ],
+  "notes": []
+}

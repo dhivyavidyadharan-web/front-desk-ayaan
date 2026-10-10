@@ -1,0 +1,45 @@
+{
+  "id": "T06",
+  "started_at": "2026-09-05T15:28:00+05:30",
+  "answered": true,
+  "header": "T06 · Phone · 5 September · 3:28pm · 5 min 01 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi, I’m calling about a commercial project. We’re a startup — just got our first proper office space in Baner. About 800 sq ft. We need workstations for 20 people, a small cabin, a meeting room, and a break area."
+    },
+    {
+      "speaker": "agent",
+      "text": "We do commercial fitouts up to about 3,000 sq ft. What’s the state of the space right now?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Bare shell — just columns and floor. Nothing else."
+    },
+    {
+      "speaker": "agent",
+      "text": "Full fitout from scratch. And the timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "We want to be operational by December. Our team is working from home currently."
+    },
+    {
+      "speaker": "agent",
+      "text": "December is doable. Are you the decision-maker for this?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes, I’m the founder."
+    },
+    {
+      "speaker": "agent",
+      "text": "Perfect. Let’s set up a consultation."
+    }
+  ],
+  "notes": []
+}

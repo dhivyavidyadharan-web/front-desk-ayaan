@@ -42,6 +42,50 @@ export const DEFAULT_CONFIG: RubricConfig = {
   festivalDates: { 'Diwali 2026': '2026-11-08', 'Diwali 2027': '2027-10-29' },
 };
 
+/** Call-handling settings (not part of the rubric). */
+export interface OpsConfig {
+  dedupeWindowMinutes: number;
+  callbackMaxAttempts: number;
+  callbackRetryMinutes: number;
+  officeHours: { start: string; end: string; tz: string };
+  retentionDays: number;
+}
+
+export const DEFAULT_OPS_CONFIG: OpsConfig = {
+  dedupeWindowMinutes: 30,
+  callbackMaxAttempts: 2,
+  callbackRetryMinutes: 10,
+  officeHours: { start: '10:00', end: '19:00', tz: 'Asia/Kolkata' },
+  retentionDays: 30,
+};
+
+export function opsConfigFromRows(rows: { key: string; value: unknown }[]): OpsConfig {
+  const byKey = new Map(rows.map((r) => [r.key, r.value]));
+  const pick = <T>(key: string, fallback: T): T => (byKey.has(key) ? (byKey.get(key) as T) : fallback);
+  const d = DEFAULT_OPS_CONFIG;
+  return {
+    dedupeWindowMinutes: pick('dedupe_window_minutes', d.dedupeWindowMinutes),
+    callbackMaxAttempts: pick('callback_max_attempts', d.callbackMaxAttempts),
+    callbackRetryMinutes: pick('callback_retry_minutes', d.callbackRetryMinutes),
+    officeHours: pick('office_hours', d.officeHours),
+    retentionDays: pick('retention_days', d.retentionDays),
+  };
+}
+
+/** True when the moment falls outside office hours in the studio's timezone. */
+export function isOutsideOfficeHours(at: Date, hours: OpsConfig['officeHours']): boolean {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: hours.tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .format(at)
+    .split(':')
+    .map(Number);
+  const minutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
+  const toMinutes = (hhmm: string) => {
+    const [h = 0, m = 0] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  };
+  return minutes < toMinutes(hours.start) || minutes >= toMinutes(hours.end);
+}
+
 /** Maps `config` table rows (snake_case keys, jsonb values) onto RubricConfig. Unknown keys are ignored. */
 export function configFromRows(rows: { key: string; value: unknown }[]): RubricConfig {
   const byKey = new Map(rows.map((r) => [r.key, r.value]));

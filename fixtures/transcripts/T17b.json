@@ -1,0 +1,37 @@
+{
+  "id": "T17b",
+  "started_at": "2026-09-22T14:16:00+05:30",
+  "answered": true,
+  "header": "T17 · Phone · 22 September · 2:14pm then 2:16pm",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi — I called just now and got cut off. I’m Ritu Kapoor from Pimple Saudagar. 3BHK, about 1,050 sq ft. We’ve been here two years but never properly did the interiors. We want to start now."
+    },
+    {
+      "speaker": "agent",
+      "text": "Thanks for calling back. Pimple Saudagar is in our service area. What are you looking to do?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Kitchen, wardrobes, living room. We moved in with builder furniture and it’s very basic."
+    },
+    {
+      "speaker": "agent",
+      "text": "Standard full-home scope. Timeline?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Ideally done by March. Plenty of time."
+    },
+    {
+      "speaker": "agent",
+      "text": "Perfect. Let me book a consultation."
+    }
+  ],
+  "notes": []
+}

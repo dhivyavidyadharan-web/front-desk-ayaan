@@ -1,0 +1,41 @@
+{
+  "id": "T11",
+  "started_at": "2026-09-12T10:18:00+05:30",
+  "answered": true,
+  "header": "T11 · Phone · 12 September · 10:18am · 6 min 22 sec",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good morning, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi — I have a question. I’m in a rented apartment. Can you still take up a project?"
+    },
+    {
+      "speaker": "agent",
+      "text": "It depends on the scope. What are you looking to do?"
+    },
+    {
+      "speaker": "caller",
+      "text": "It’s a 2BHK in Baner. I’ve been here a year, I have a 3-year lease, and the place is quite bare. I want to properly design the living room, bedroom, and kitchen — no structural changes, just design and fittings."
+    },
+    {
+      "speaker": "agent",
+      "text": "That’s fine — we’ve done rented apartments before. For the kitchen we’d do a modular unit that can come out cleanly. The rest is largely flooring, lighting, and furniture — all reversible. Have you checked with your landlord?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes — they’re fine with it as long as we don’t break walls."
+    },
+    {
+      "speaker": "agent",
+      "text": "Perfect. No wall-breaking from us. Shall we set up a consultation?"
+    },
+    {
+      "speaker": "caller",
+      "text": "Yes please."
+    }
+  ],
+  "notes": []
+}

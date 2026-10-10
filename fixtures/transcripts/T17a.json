@@ -1,0 +1,17 @@
+{
+  "id": "T17a",
+  "started_at": "2026-09-22T14:14:00+05:30",
+  "answered": true,
+  "header": "T17 · Phone · 22 September · 2:14pm then 2:16pm",
+  "turns": [
+    {
+      "speaker": "agent",
+      "text": "Good afternoon, Aangan Studio."
+    },
+    {
+      "speaker": "caller",
+      "text": "Hi, I wanted to inquire about — (line drops)"
+    }
+  ],
+  "notes": []
+}
