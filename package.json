@@ -20,7 +20,9 @@
     "dev:test": "USE_TEST_DB=1 next dev",
     "check-keys": "tsx --env-file=.env.local scripts/check-keys.mts",
     "eval": "tsx --env-file=.env.local scripts/eval-extraction.ts",
-    "telegram:setup": "tsx --env-file=.env.local scripts/telegram-setup.mts"
+    "telegram:setup": "tsx --env-file=.env.local scripts/telegram-setup.mts",
+    "demo:load": "tsx --env-file=.env.local scripts/load-demo.mts",
+    "test:call": "tsx --env-file=.env.local scripts/test-call.mts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
