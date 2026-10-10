@@ -14,6 +14,7 @@ import { decideOutcome, type Decision, type Outcome } from '../core/decideOutcom
 import { shouldJoinPreviousEnquiry } from '../core/enquiry';
 import { scanTranscriptForPriceLeaks } from '../core/priceLeak';
 import { withTransaction, type Db, type Tx } from '../db/client';
+import type { Notifier } from '../integrations/notifier';
 import type { Extractor } from '../llm/extractor';
 import { linkPendingForCaller } from './bookings';
 
@@ -26,6 +27,8 @@ export interface CostRates {
 export interface PipelineDeps {
   db: Db;
   extractor: Extractor;
+  /** Telegram alerts to designers; omitted when Telegram isn't configured (and in tests). */
+  notifier?: Notifier;
   now?: () => Date;
   costRates?: CostRates;
 }
@@ -351,10 +354,15 @@ export async function handleCallEnded(deps: PipelineDeps, interaction: Interacti
     return { callId, enquiryId, callerId, callbackReminder };
   });
 
-  // After commit: link any booking the agent made during this call.
+  // After commit: link any booking the agent made during this call, then tell the designer:
+  // one "consultation booked" message if it was booked, otherwise "new qualified lead".
   // A failure here never loses the call; it surfaces as a dashboard alert.
   try {
-    await linkPendingForCaller(deps.db, stored.callerId);
+    const linked = await linkPendingForCaller(deps.db, stored.callerId);
+    if (deps.notifier) {
+      if (linked.length) for (const bookingId of linked) await deps.notifier.bookingLinked(bookingId);
+      else if (decision?.outcome === 'qualified') await deps.notifier.leadQualified(stored.callId);
+    }
   } catch (err) {
     await deps.db.query(`insert into public.alerts (type, call_id, details) values ('integration_failed', $1, $2)`, [
       stored.callId,

@@ -3,14 +3,24 @@ import { isOffice, requireSession } from '@/auth/session';
 import { getPool, withDashboardUser } from '@/db/client';
 import { configRows } from '@/crm/queries';
 import { fmtDate } from '@/crm/labels';
+import { getBotUsername, telegramConfigFromEnv } from '@/integrations/telegram';
+import { designerLinkCode } from '@/integrations/telegramLink';
 import { updateConfig } from '../../actions';
 import { Flash } from '../../ui';
+import { CopyButton } from './copy-button';
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const session = await requireSession();
   if (!isOffice(session)) redirect('/');
   const sp = await searchParams;
-  const rows = await withDashboardUser(getPool(), session.id, configRows);
+  const [rows, designers] = await Promise.all([
+    withDashboardUser(getPool(), session.id, configRows),
+    withDashboardUser(getPool(), session.id, (tx) =>
+      tx.query<{ id: string; name: string; telegram_chat_id: string | null }>(`select id, name, telegram_chat_id from public.designers where active order by name`),
+    ).then((r) => r.rows),
+  ]);
+  const tg = telegramConfigFromEnv();
+  const bot = tg ? await getBotUsername(tg) : null;
   const admin = session.role === 'admin';
   const unconfirmed = rows.filter((r) => !r.confirmed).length;
 

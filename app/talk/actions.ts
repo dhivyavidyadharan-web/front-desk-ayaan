@@ -2,6 +2,7 @@
 // Starts a browser call with the Vaani agent. Public: no login, so input is validated and
 // sessions are rate-limited per number and overall to cap cost.
 import { VaaniVoiceProvider, vaaniConfigFromEnv } from '@/channels/voice/providers/vaani';
+import { openingLine } from '@/core/greeting';
 import { normalizePhone } from '@/core/phone';
 import { getPool } from '@/db/client';
 import { FixtureExtractor } from '@/llm/extractor';
@@ -14,21 +15,6 @@ const LANGS = ['en', 'hi', 'mr'] as const;
 type Lang = (typeof LANGS)[number];
 const PER_NUMBER_LIMIT = 3; // per 30 minutes
 const GLOBAL_LIMIT = 20; // per minute
-
-function greeting(lang: Lang, name: string, resuming: boolean): string {
-  if (resuming) {
-    return {
-      en: `Hi ${name}, it looks like we got cut off earlier. This call is recorded to help us serve you better. Shall we pick up where we left off?`,
-      hi: `नमस्ते ${name}, लगता है पिछली कॉल बीच में कट गई थी। बेहतर सेवा के लिए यह कॉल रिकॉर्ड की जा रही है। क्या हम वहीं से आगे बढ़ें?`,
-      mr: `नमस्कार ${name}, मागचा कॉल मध्येच कट झाला असं दिसतंय. चांगली सेवा देण्यासाठी हा कॉल रेकॉर्ड केला जात आहे. आपण तिथूनच पुढे बोलूया का?`,
-    }[lang];
-  }
-  return {
-    en: `Hi ${name}, thank you for calling Aangan Studio. This call is recorded to help us serve you better. How are you doing today, and how can I help?`,
-    hi: `नमस्ते ${name}, आंगन स्टूडियो में कॉल करने के लिए धन्यवाद। बेहतर सेवा के लिए यह कॉल रिकॉर्ड की जा रही है। मैं आपकी कैसे मदद कर सकता हूँ?`,
-    mr: `नमस्कार ${name}, आंगन स्टुडिओला कॉल केल्याबद्दल धन्यवाद. आपल्याला चांगली सेवा देण्यासाठी हा कॉल रेकॉर्ड केला जात आहे. मी आपली कशी मदत करू शकतो?`,
-  }[lang];
-}
 
 export async function startWebCall(input: { name: string; phone: string; language: string; consent: boolean }): Promise<StartCallResult> {
   const config = vaaniConfigFromEnv();
@@ -53,21 +39,19 @@ export async function startWebCall(input: { name: string; phone: string; languag
 
   const ctx = await getCallerContext({ db, extractor: new FixtureExtractor({}) }, phone, new Date());
   const prompt = loadPrompt('voice_agent');
-  const systemPrompt = fillTemplate(prompt.text, {
-    caller_name: name,
-    returning_context: ctx.resuming
-      ? `Their previous call dropped a few minutes ago. What we know so far: ${ctx.resuming.summary ?? 'very little'}. Continue from there; don't start the questions over.`
-      : ctx.known
-        ? 'They have called the studio before.'
-        : 'This is their first call to the studio.',
-  });
+  const returningContext = ctx.resuming
+    ? `Their previous call dropped a few minutes ago. What we know so far: ${ctx.resuming.summary ?? 'very little'}. Continue from there; don't start the questions over.`
+    : ctx.known
+      ? 'They have called the studio before.'
+      : 'This is their first call to the studio.';
+  const systemPrompt = fillTemplate(prompt.text, { caller_name: name, returning_context: returningContext });
 
   try {
     const session = await new VaaniVoiceProvider(config).createWebSession({
       systemPrompt,
-      welcomeMessage: greeting(language, name, Boolean(ctx.resuming)),
+      welcomeMessage: openingLine(language, name, Boolean(ctx.resuming)),
       language,
-      metadata: { caller_name: name, caller_phone: phone },
+      metadata: { caller_name: name, caller_phone: phone, returning_context: returningContext },
     });
     await db.query(
       `insert into public.voice_sessions (provider, provider_call_id, phone, name, language, consent_at, agent_prompt_version)
