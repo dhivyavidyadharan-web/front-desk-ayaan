@@ -12,3 +12,5 @@ coverage/
 # Internal pricing must never enter this repo (brief §4.1).
 pricing.md
 **/pricing.md
+next-env.d.ts
+*.tsbuildinfo
