@@ -61,8 +61,11 @@ describe.skipIf(!enabled)('Vaani webhook route', () => {
     expect(body).toMatchObject({ outcome: 'missed', callbackReminder: true });
   });
 
-  it('ignores sessions it did not start', async () => {
-    expect((await call(finished('someone-elses-room', 'USER: hi'))).status).toBe(202);
+  it('keeps calls started outside /talk (e.g. Vaani\'s Test button) under a placeholder number', async () => {
+    const res = await call(finished('vaani-dashboard-test-room', 'AGENT: Hello.\nUSER: I have a 3BHK in Aundh.'));
+    expect(res.status).toBe(200);
+    const row = (await db.query(`select from_number from calls where provider_call_id = 'vaani-dashboard-test-room'`)).rows[0];
+    expect(row.from_number).toMatch(/^\+999\d{9}$/);
   });
 
   it('ignores lifecycle events', async () => {

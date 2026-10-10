@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { getVoiceProvider } from '@/channels/voice';
 import { WebhookAuthError } from '@/channels/voice/VoiceProvider';
 import { getPool } from '@/db/client';
@@ -8,6 +9,12 @@ import { getCallerContext, handleCallEnded, type PipelineDeps } from '@/pipeline
 export const runtime = 'nodejs';
 // Extraction can take a few seconds; allow for one retry.
 export const maxDuration = 60;
+
+/** A stable, obviously-fake E.164 number for a call with no caller ID (+999 is not a real country code). */
+function placeholderNumber(callId: string): string {
+  const digits = createHash('sha256').update(callId).digest('hex').replace(/[^0-9]/g, '').padEnd(9, '0').slice(0, 9);
+  return `+999${digits}`;
+}
 
 export async function POST(req: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
@@ -36,7 +43,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
     );
     from = s.rows[0]?.phone ?? '';
   }
-  if (!from) return Response.json({ ok: true, ignored: 'unknown caller' }, { status: 202 });
+  // Calls started outside our /talk page (e.g. Vaani's own Test button) carry no number. Keep them
+  // anyway under a stable placeholder number, so every call reaches the dashboard; the caller's
+  // name still comes from the conversation.
+  if (!from) from = placeholderNumber(providerCallId);
 
   if (event.type === 'call_started') {
     return Response.json(await getCallerContext(deps, from, event.startedAt));
