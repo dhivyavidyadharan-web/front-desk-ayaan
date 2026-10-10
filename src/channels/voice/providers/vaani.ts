@@ -76,7 +76,7 @@ export class VaaniVoiceProvider implements VoiceProvider {
         metadata: req.metadata,
         primary_language: req.language,
         secondary_language: 'en',
-        voice_gender: 'female',
+        voice_gender: 'male', // matches the agent's configured voice (Devansh)
         welcome_message: req.welcomeMessage,
         welcome_interruptible: true,
         modify_agent: { persona: { identity: { system_prompt: req.systemPrompt } } },
