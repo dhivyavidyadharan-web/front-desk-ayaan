@@ -74,14 +74,9 @@ export class VaaniVoiceProvider implements VoiceProvider {
         agent_id: this.config.agentId,
         medium: 'webrtc',
         metadata: req.metadata,
-        primary_language: req.language,
-        secondary_language: 'en',
-        voice_gender: 'male', // matches the agent's configured voice (Devansh)
-        welcome_message: req.welcomeMessage,
-        welcome_interruptible: true,
-        // The script and greeting live in the Vaani dashboard (prompts/voice_agent.md); they read
-        // caller_name, returning_context and time_greeting from metadata. Overriding the persona per
-        // call (modify_agent) stopped the agent hearing the caller, so we don't.
+        // Nothing else: the script, greeting, voice and language all come from the saved agent,
+        // exactly as Vaani's own test starts a call. Per-call overrides (welcome message, language,
+        // persona) left the agent unable to hear the caller after the greeting.
       }),
     });
     if (!res.ok) throw new Error(`Vaani session failed (${res.status}): ${(await res.text()).slice(0, 200)}`);

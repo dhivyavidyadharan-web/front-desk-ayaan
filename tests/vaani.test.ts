@@ -97,10 +97,8 @@ describe('VaaniVoiceProvider.createWebSession', () => {
     expect(body).toMatchObject({
       agent_id: config.agentId,
       medium: 'webrtc',
-      primary_language: 'hi',
-      welcome_message: 'Hi Rahul',
     });
-    expect(body.modify_agent).toBeUndefined(); // the saved agent is used as is
+    expect(Object.keys(body).sort()).toEqual(['agent_id', 'medium', 'metadata']); // the saved agent is used as is
     expect(String(init.body)).not.toContain('test-key');
   });
 
