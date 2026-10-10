@@ -255,3 +255,19 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; 
 .loading-text { font-family: var(--display); font-size: 21px; line-height: 1.45; max-width: 560px; color: var(--text); min-height: 3em; animation: fade 0.6s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pendant .bulb, .pendant .pool, .loading-text { animation: none; } }
+
+/* ---- Talk page ------------------------------------------------------------- */
+.talk { max-width: 480px; margin: 4vh auto 0; display: flex; flex-direction: column; align-items: center; }
+.talk .card { width: 100%; }
+.talk-form { display: flex; flex-direction: column; gap: 4px; }
+.talk-form input, .talk-form select { margin-bottom: 10px; }
+.talk-form button { align-self: flex-start; margin-top: 6px; }
+.talk-form .consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text); margin: 4px 0 8px; }
+.talk-form .consent input { margin: 2px 0 0; flex: none; }
+.talk-live { text-align: center; }
+.small { font-size: 12px; margin-top: 8px; }
+.pendant:not(.on) .bulb { animation: none; box-shadow: 0 0 6px 1px rgba(255, 196, 120, 0.25); }
+.pendant:not(.on) .pool { animation: none; opacity: 0.35; }
+.pendant.speaking .bulb { box-shadow: 0 0 26px 10px rgba(255, 196, 120, 0.75); }
+.pendant.speaking .pool { opacity: 1; }
+button:disabled { opacity: 0.6; cursor: progress; }

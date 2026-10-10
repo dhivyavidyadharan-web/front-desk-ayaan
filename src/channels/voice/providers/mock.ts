@@ -1,5 +1,4 @@
-// Stand-in voice provider until Vani access arrives. Accepts our own JSON events (used by
-// scripts/replay.ts and tests).
+// Test voice provider: accepts our own JSON events (used by scripts/replay.ts and tests).
 import { z } from 'zod';
 import type { VoiceEvent, VoiceProvider } from '../VoiceProvider';
 import { WebhookAuthError } from '../VoiceProvider';

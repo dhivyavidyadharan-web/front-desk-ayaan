@@ -8,7 +8,9 @@ The source brief is "Build brief: Aangan Studio inbound call agent". This file r
 - **Consultations are online.** The agent books any free slot on the assigned designer's cal.com calendar. cal.com sends the confirmation and video link to the client and the designer.
 - **Fully automated.** The bot runs when the front desk or Nikhil isn't available, and Nikhil does not sign off on rules. Uncertain rules are stored in `config` with `confirmed = false` and can be edited on the Settings page.
 - **Telegram.** Every call's summary and transcript go to the studio team group, and qualified leads also go to the assigned designer. The Acknowledge button is kept for metrics only; nobody is asked to act at night, and there is no escalation timer.
-- **Callbacks are made by the bot.** After a missed or dropped call, the Vani bot calls back (`callback_max_attempts`, `callback_retry_minutes`). This needs Vani to support outbound calls.
+- **Voice: Vaani over WebRTC.** Callers use the public `/talk` page (name, mobile, language, recording consent). The server starts each Vaani session with the versioned `prompts/voice_agent.md` and the greeting; the transcript arrives in Vaani's `call_postprocessing` webhook, secured with a secret URL token because Vaani doesn't sign webhooks. Sessions are rate-limited per number and overall.
+- **Callbacks are dashboard reminders.** A missed or dropped call creates a "call back" task on the dashboard; it is cancelled automatically if the caller rings back. The bot does not call out.
+- **Extraction: Gemini** (model in `GEMINI_MODEL`), JSON validated against the schema, one retry with the errors, then `needs_review`.
 - **Complaints.** The bot collects name, project, designer and issue, and tells the caller the team will get back to them during studio hours. It makes no "15 minutes" promise. Details go to the team Telegram group and the dashboard.
 - **Referral source.** Captured if the caller mentions it. The agent may ask once, lightly, and never pushes.
 - **CRM.** After every call, the transcript and all lead details (scope, budget, location, size, timeline, expectations) go to the dashboard and to HubSpot.
@@ -43,7 +45,7 @@ The source brief is "Build brief: Aangan Studio inbound call agent". This file r
 
 ## Open
 
-- Vani: link, credentials, inbound number, webhooks, caller ID, outbound calls, mid-call tool calls, Hindi/Marathi, per-minute cost.
+- Vaani: confirm Marathi support and per-minute cost; register the webhook URL in Vaani (Settings → Webhooks).
 - Real designer roster, cal.com event types, Telegram chat IDs.
 - Vercel plan (decides how scheduled jobs run: the bot's callback retries and the daily 30-day cleanup).
 - Dashboard sign-in method.
